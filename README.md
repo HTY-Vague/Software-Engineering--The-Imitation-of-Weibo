@@ -165,6 +165,11 @@ MySQL 数据库
 - `forum_comment`：评论表
 - `forum_like`：点赞表（可选）
 
+### 代码侧命名（驼峰）
+
+- 实体类：`User`、`ForumBoard`、`ForumPost`、`ForumComment`、`ForumLike`
+- Mapper XML：`UserMapper.xml`、`ForumBoardMapper.xml`、`ForumPostMapper.xml`、`ForumCommentMapper.xml`、`ForumLikeMapper.xml`
+
 ### 表结构字段（核心）
 
 #### 1) 用户表 `sys_user`
