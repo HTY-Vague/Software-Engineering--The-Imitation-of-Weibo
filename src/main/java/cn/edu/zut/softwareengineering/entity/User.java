@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class User {
-    private Integer user_id;
+    private Integer userId;
     private String username;
     private String password;
     private String nickname;
@@ -14,6 +14,6 @@ public class User {
     private String signature;
     private String role;
     private String status;
-    private LocalDateTime create_time;
-    private LocalDateTime update_time;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }
