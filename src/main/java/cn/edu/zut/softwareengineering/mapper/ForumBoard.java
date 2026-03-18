@@ -1,5 +1,5 @@
 package cn.edu.zut.softwareengineering.mapper;
 
-public class ForumCommentMapper {
+public interface ForumBoard {
 
 }
