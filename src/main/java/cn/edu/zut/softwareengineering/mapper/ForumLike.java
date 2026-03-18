@@ -1,5 +1,5 @@
 package cn.edu.zut.softwareengineering.mapper;
 
-public class ForumPostMapper {
+public interface ForumLike {
 
 }
