@@ -130,16 +130,11 @@ MySQL 数据库
 - Spring Security
 - JWT 认证
 - MyBatis Plus
+- BCrypt 密码加密
 
 ### 数据库
 
 - MySQL 8
-
-### 可选组件
-
-- Redis（缓存 / 热点数据）
-- Docker（容器化部署）
-- OSS 对象存储（图片等静态资源）
 
 ## 系统架构图（逻辑）
 
@@ -254,8 +249,8 @@ MySQL 数据库
 
 ## 安全设计
 
-- **密码加密**：BCrypt
-- **身份认证**：JWT
+- **密码加密**：BCrypt（单向哈希加密，Spring Security 默认支持）
+- **身份认证**：JWT（无状态令牌认证）
 - **权限控制**：Spring Security（接口级鉴权）
 - **防 SQL 注入**：MyBatis Plus 参数化查询
 - **XSS 防护**：富文本内容过滤与输出安全处理
@@ -310,28 +305,33 @@ forum-web/
 
 ### 本地运行
 
-#### 1) 启动后端
+#### 1) 配置数据库
+
+在 `src/main/resources/application.properties` 中配置数据库连接：
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/your_database
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+```
+
+#### 2) 初始化数据库
+
+执行 `SoftwareEngineering.sql` 创建数据库和表。
+
+#### 3) 启动后端
 
 ```bash
-cd forum-server
 mvn spring-boot:run
 ```
 
-#### 2) 启动前端
+#### 4) 启动前端
 
 ```bash
 cd forum-web
 npm install
 npm run dev
 ```
-
-### Docker 部署
-
-```bash
-docker-compose up -d
-```
-
-> 如启用 Docker，请确保已正确配置数据库连接、JWT 密钥及端口映射。
 
 ## 开发周期（课程设计建议）
 
