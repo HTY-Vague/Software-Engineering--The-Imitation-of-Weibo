@@ -21,15 +21,15 @@ public interface UserService {
     User register(User user);
     /**
      * 用户注销
-     * @param user
-     * @return
+        * @param userId
      */
-    User logout(User user);
+        void logout(Long userId);
     /**
      * 获取用户信息
+        * @param userId
      * @return
      */
-    User getProfile();
+        User getProfile(Long userId);
     /**
      * 更新用户信息
      * @param user
@@ -37,32 +37,33 @@ public interface UserService {
     void updateProfile(User user);
     /**
      * 更新用户密码
-     * @param user
+        * @param userId
+        * @param oldPassword
+        * @param newPassword
      */
-    void updatePassword(User user);
+        void updatePassword(Long userId, String oldPassword, String newPassword);
     /**
      * 获取用户帖子
-     * @param user
+        * @param userId
      * @return
      */
-    List<ForumPost> getPosts(User user);
+        List<ForumPost> getPosts(Long userId);
     /**
      * 删除用户帖子
-     * @param user
-     * @return
+        * @param postId
      */
-    void deletePost(User user);
+        void deletePost(Long postId);
     /**
      * 获取用户评论
-     * @param user
+        * @param userId
      * @return
      */
-    List<ForumComment> getComments(User user);
+        List<ForumComment> getComments(Long userId);
     /**
      * 获取用户列表(Admin)
      * @return
      */
-    List<User> getUsers();
+    List<User> getAllUsers();
     /**
      * 启用/禁用用户(Admin)
      * @param userId
