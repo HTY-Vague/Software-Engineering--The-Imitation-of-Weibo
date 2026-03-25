@@ -52,6 +52,12 @@ public class UserController {
 
     }
 
+    @PostMapping("/delete/post")
+    public void deletePost(@RequestBody User user) {
+        userService.deletePost(user);
+
+    }
+
     @PostMapping("/comments")
     public ResponseEntity<?> getComments(@RequestBody User user) {
 
