@@ -1,27 +1,22 @@
 package cn.edu.zut.softwareengineering.mapper;
-import java.util.List;
 
 import cn.edu.zut.softwareengineering.entity.ForumPost;
 import cn.edu.zut.softwareengineering.entity.User;
+import cn.edu.zut.softwareengineering.entity.ForumComment;
 
+import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
 public interface UserMapper {
-    public User login(User user);
-
-    public User register(User user);
-    
-    public void logout(Long userId);
-
-    public User getUserById(Long userId);
-
-    public void updateProfile(User user);
-
-    public void updatePassword(Long userId, String oldPassword, String newPassword);
-
-    public List<ForumPost> getUserPosts(Long userId);
-
-    public List<ForumCommentMapper> getUserComments(Long userId);
-
-    public List<User> getAllUsers();
-
-    public void updateUserStatus(Long userId, Integer status);
+    User login(User user);
+    User register(User user);
+    void logout(Long userId);
+    User getUserById(Long userId);
+    void updateProfile(User user);
+    void updatePassword(Long userId, String oldPassword, String newPassword);
+    List<ForumPost> getUserPosts(Long userId);
+    List<ForumComment> getUserComments(Long userId);
+    List<User> getAllUsers();
+    void updateUserStatus(Long userId, Integer status);
 }

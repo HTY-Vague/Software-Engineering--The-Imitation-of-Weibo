@@ -1,6 +1,7 @@
 package cn.edu.zut.softwareengineering.contller;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,8 +26,8 @@ public class UserController {
 
     @PostMapping("/profile")
     public ResponseEntity<User> getProfile(@RequestBody User user) {
-
-        return ResponseEntity.ok(userService.getProfile());
+        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        return ResponseEntity.ok(userService.getProfile(userId));
 
     }
 
@@ -39,29 +40,31 @@ public class UserController {
     }
 
     @PostMapping("/update/password")
-    public void updatePassword(@RequestBody User user) {
-
-        userService.updatePassword(user);
+    public void updatePassword(@RequestBody User user,
+                               @RequestParam String oldPassword,
+                               @RequestParam String newPassword) {
+        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        userService.updatePassword(userId, oldPassword, newPassword);
 
     }
 
     @PostMapping("/posts")
     public ResponseEntity<?> getPosts(@RequestBody User user) {
-
-        return ResponseEntity.ok(userService.getPosts(user));
+        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        return ResponseEntity.ok(userService.getPosts(userId));
 
     }
 
     @PostMapping("/delete/post")
-    public void deletePost(@RequestBody User user) {
-        userService.deletePost(user);
+    public void deletePost(@RequestParam Long postId) {
+        userService.deletePost(postId);
 
     }
 
     @PostMapping("/comments")
     public ResponseEntity<?> getComments(@RequestBody User user) {
-
-        return ResponseEntity.ok(userService.getComments(user));
+        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        return ResponseEntity.ok(userService.getComments(userId));
 
     }
 }

@@ -12,12 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
-import cn.edu.zut.softwareengineering.entity.ForumLike;
 import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
-import cn.edu.zut.softwareengineering.service.ForumCommentService;
-import cn.edu.zut.softwareengineering.service.ForumLikeService;
-import cn.edu.zut.softwareengineering.service.ForumPostService;
 import cn.edu.zut.softwareengineering.service.UserService;
 
 import java.util.List;
@@ -28,73 +24,51 @@ import java.util.List;
 public class AdminController {
 
     private final ForumBoardService boardService;
-    private final ForumCommentService commentService;
-    private final ForumLikeService likeService;
-    private final ForumPostService postService;
     private final UserService userService;
-    
-    public AdminController(UserService userService , ForumBoardService forumService, ForumCommentService commentService, ForumLikeService likeService, ForumPostService postService) {
+
+    public AdminController(UserService userService, ForumBoardService boardService) {
         this.userService = userService;
-
-        this.boardService = forumService;
-
-        this.commentService = commentService;
-
-        this.likeService = likeService;
-
-        this.postService = postService;
+        this.boardService = boardService;
     }
 
-    @GetMapping("/users")//获取用户列表
-    public ResponseEntity<List<User>> getUsers() {
-        return ResponseEntity.ok(userService.getUsers());
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PutMapping("/users/{userId}/status")//启用/禁用用户
+    @PutMapping("/users/{userId}/status")
     public void updateUserStatus(@PathVariable Long userId, @RequestBody Integer status) {
-        
         userService.updateUserStatus(userId, status);
-    
     }
 
-    @GetMapping("/forums")//获取论坛列表
+    @GetMapping("/forums")
     public ResponseEntity<List<ForumBoard>> getBoards() {
-
         return ResponseEntity.ok(boardService.getBoards());
-
     }
 
-    @PostMapping("/forums")//添加论坛
+    @PostMapping("/forums")
     public ResponseEntity<ForumBoard> addBoard(@RequestBody ForumBoard forumBoard) {
-        
         boardService.addBoard(forumBoard);
         return ResponseEntity.ok(forumBoard);
-
     }
-    
-    @PutMapping("/forums/{forumId}")//更新论坛
+
+    @PutMapping("/forums/{forumId}")
     public void updateForum(@PathVariable Integer forumId, @RequestBody ForumBoard forumBoard) {
         boardService.updateBoard(forumBoard);
     }
 
-    @PutMapping("/forums/{forumId}/status")//启用/禁用论坛
+    @PutMapping("/forums/{forumId}/status")
     public void updateForumStatus(@PathVariable Integer forumId, @RequestBody Integer status) {
-
         boardService.updateBoardStatus(forumId, status);
-
     }
 
-    @PutMapping("/forums/sort")//排序论坛
+    @PutMapping("/forums/sort")
     public void sortForums() {
-
         boardService.sortBoards(null);
-    
     }
 
-    @DeleteMapping("/forums/{forumId}")//删除论坛
+    @DeleteMapping("/forums/{forumId}")
     public void deleteForum(@PathVariable Integer forumId) {
-
         boardService.deleteBoard(forumId);
-    
     }
 }
