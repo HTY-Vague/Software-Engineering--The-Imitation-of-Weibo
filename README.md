@@ -65,6 +65,7 @@
 - 修改板块信息
 - 启用 / 禁用板块
 - 板块排序
+- 删除板块
 
 ### 3) 帖子模块
 
@@ -88,9 +89,9 @@
 ### 5) 后台管理模块
 
 - 管理员登录
-- 用户管理
-- 板块管理
-- 内容管理（帖子 / 评论）
+- 用户管理（启用/禁用、删除）
+- 板块管理（增删改查、排序）
+- 内容管理（帖子 / 评论删除）
 - 举报处理（可选）
 - 数据统计（可选）
 
@@ -136,19 +137,42 @@ MySQL 数据库
 
 - MySQL 8
 
-## 系统架构图（逻辑）
+## 后端架构设计
 
-```text
-用户浏览器
-    ↓
-Vue 前端应用
-    ↓
-REST API
-    ↓
-Spring Boot 后端服务
-    ↓
-MySQL 数据库
+### 分层架构
+
 ```
+controller/  ← Controller层（控制器）
+    ↓
+service/     ← Service层（业务逻辑）
+    ↓
+mapper/      ← Mapper层（数据访问）
+    ↓
+MySQL数据库   ← 数据库存储
+```
+
+### Controller 分层设计
+
+- `AuthController.java` - 认证相关（注册、登录、退出）
+- `UserController.java` - 用户个人信息管理
+- `ForumBoardController.java` - 板块管理
+- `ForumPostController.java` - 帖子管理
+- `ForumCommentController.java` - 评论管理
+- `AdminController.java` - 后台管理（用户管理、板块管理、内容管理）
+
+### Service 接口设计
+
+- `UserService` - 用户业务逻辑
+- `ForumBoardService` - 板块业务逻辑
+- `ForumPostService` - 帖子业务逻辑
+- `ForumCommentService` - 评论业务逻辑
+
+### Mapper 接口设计
+
+- `UserMapper` - 用户数据访问
+- `ForumBoardMapper` - 板块数据访问
+- `ForumPostMapper` - 帖子数据访问
+- `ForumCommentMapper` - 评论数据访问
 
 ## 数据库设计
 
@@ -163,88 +187,87 @@ MySQL 数据库
 ### 代码侧命名（驼峰）
 
 - 实体类：`User`、`ForumBoard`、`ForumPost`、`ForumComment`、`ForumLike`
+- Mapper 接口：`UserMapper`、`ForumBoardMapper`、`ForumPostMapper`、`ForumCommentMapper`、`ForumLikeMapper`
+- Service 接口：`UserService`、`ForumBoardService`、`ForumPostService`、`ForumCommentService`
 - Mapper XML：`UserMapper.xml`、`ForumBoardMapper.xml`、`ForumPostMapper.xml`、`ForumCommentMapper.xml`、`ForumLikeMapper.xml`
 
-### 表结构字段（核心）
+## API 接口设计规范
 
-#### 1) 用户表 `sys_user`
+### RESTful 接口设计
 
-| 字段名 | 说明 |
-| --- | --- |
-| user_id | 用户 ID（主键） |
-| username | 登录账号（唯一） |
-| password | 密码（加密存储） |
-| nickname | 昵称 |
-| avatar | 头像地址 |
-| signature | 个性签名 |
-| role | 角色（USER / ADMIN） |
-| status | 状态（启用 / 禁用） |
-| create_time | 创建时间 |
-| update_time | 更新时间 |
+| 模块 | 路径前缀 | 说明 |
+|--------|-----------|------|
+| 认证 | `/auth/*` | 注册、登录、退出 |
+| 用户 | `/user/*` | 个人信息、我的帖子、我的评论 |
+| 板块 | `/boards/*` | 板块列表、板块详情 |
+| 帖子 | `/posts/*` | 帖子列表、发布、编辑、删除 |
+| 评论 | `/comments/*` | 评论列表、发表评论 |
+| 管理员 | `/admin/*` | 用户管理、板块管理、内容管理 |
 
-#### 2) 板块表 `forum_board`
+### HTTP 方法规范
 
-| 字段名 | 说明 |
-| --- | --- |
-| board_id | 板块 ID（主键） |
-| board_name | 板块名称 |
-| description | 板块描述 |
-| sort_num | 排序值 |
-| status | 状态（启用 / 禁用） |
-| create_time | 创建时间 |
-| update_time | 更新时间 |
+| HTTP 方法 | 用途 | 返回值 |
+|----------|------|--------|
+| GET | 查询 | 实体或列表 `T` / `List<T>` |
+| POST | 创建 | 实体 `T` |
+| PUT | 更新 | `void` |
+| DELETE | 删除 | `void` |
 
-#### 3) 帖子表 `forum_post`
+### Controller 返回类型规范
 
-| 字段名 | 说明 |
-| --- | --- |
-| post_id | 帖子 ID（主键） |
-| board_id | 所属板块 ID |
-| author_id | 作者用户 ID |
-| title | 帖子标题 |
-| content | 帖子内容（富文本） |
-| view_count | 浏览量 |
-| like_count | 点赞数 |
-| comment_count | 评论数 |
-| is_top | 是否置顶 |
-| status | 状态（正常 / 删除） |
-| create_time | 创建时间 |
-| update_time | 更新时间 |
+| 操作类型 | Controller返回类型 | Service返回类型 | 说明 |
+|---------|------------------|-----------------|------|
+| 查询单个 | `ResponseEntity<T>` | `T` | 返回实体对象 |
+| 查询列表 | `ResponseEntity<List<T>>` | `List<T>` | 返回实体列表 |
+| 新增 | `ResponseEntity<T>` | `T` | 返回创建的实体 |
+| 更新 | `void` | `void` | Spring自动返回200 OK |
+| 删除 | `void` | `void` | Spring自动返回200 OK |
 
-#### 4) 评论表 `forum_comment`
+### Service 方法命名规范
 
-| 字段名 | 说明 |
-| --- | --- |
-| comment_id | 评论 ID（主键） |
-| post_id | 所属帖子 ID |
-| user_id | 评论用户 ID |
-| parent_comment_id | 父评论 ID（一级评论为 0 或 NULL） |
-| reply_user_id | 被回复用户 ID |
-| content | 评论内容 |
-| like_count | 点赞数 |
-| status | 状态（正常 / 删除） |
-| create_time | 创建时间 |
-| update_time | 更新时间 |
+| 操作 | Service方法名 | 示例 |
+|------|----------------|------|
+| 查询单个 | `get + 实体名` | `getUserById()`, `getPostById()` |
+| 查询列表 | `get + 复数实体名` | `getAllUsers()`, `getAllPosts()` |
+| 创建 | `create + 实体名` | `createUser()`, `createPost()` |
+| 更新 | `update + 实体名` | `updateUser()`, `updatePost()` |
+| 删除 | `delete + 实体名` | `deleteUser()`, `deletePost()` |
+| 登录/注册 | `login()`, `register()` | `login()`, `register()` |
 
-## 核心业务流程
-
-### 用户发帖流程
+## 项目目录结构
 
 ```text
-用户登录
-→ 选择板块
-→ 发布帖子
-→ 帖子写入数据库
-→ 帖子列表展示
-```
-
-### 评论流程
-
-```text
-用户发表评论
-→ 创建评论记录
-→ 更新帖子评论数
-→ 评论列表刷新
+src/main/java/cn/edu/zut/softwareengineering/
+├── controller/              ← 控制器层
+│   ├── AuthController.java
+│   ├── UserController.java
+│   ├── ForumBoardController.java
+│   ├── ForumPostController.java
+│   ├── ForumCommentController.java
+│   └── AdminController.java
+├── service/                 ← 业务逻辑层
+│   ├── UserService.java
+│   ├── ForumBoardService.java
+│   ├── ForumPostService.java
+│   ├── ForumCommentService.java
+│   └── Impl/             ← Service实现类
+│       ├── UserServiceImpl.java
+│       ├── ForumBoardServiceImpl.java
+│       ├── ForumPostServiceImpl.java
+│       └── ForumCommentServiceImpl.java
+├── mapper/                  ← 数据访问层
+│   ├── UserMapper.java
+│   ├── ForumBoardMapper.java
+│   ├── ForumPostMapper.java
+│   └── ForumCommentMapper.java
+├── entity/                   ← 实体类
+│   ├── User.java
+│   ├── ForumBoard.java
+│   ├── ForumPost.java
+│   └── ForumComment.java
+└── config/                   ← 配置类
+    ├── SecurityConfig.java
+    └── JwtConfig.java
 ```
 
 ## 安全设计
@@ -274,25 +297,6 @@ MySQL 数据库
 - 标签系统
 - 多管理员协作
 - 移动端适配
-
-## 项目目录结构（示例）
-
-```text
-forum-server/
-├─ controller/
-├─ service/
-├─ mapper/
-├─ entity/
-├─ config/
-└─ utils/
-
-forum-web/
-├─ views/
-├─ components/
-├─ router/
-├─ store/
-└─ api/
-```
 
 ## 快速开始
 
@@ -337,7 +341,7 @@ npm run dev
 
 - **第 1 周**：项目搭建 + 用户模块
 - **第 2 周**：板块模块 + 帖子模块
-- **第 3 周**：前端页面开发
+- **第 3 周**：评论模块 + 前端页面开发
 - **第 4 周**：后台管理 + 测试部署
 
 ## 课程设计交付建议
@@ -348,14 +352,11 @@ npm run dev
 - 测试报告（功能测试 + 基础性能测试）
 - 项目演示视频或答辩 PPT
 
+## 相关文档
+
+- [Service功能及修饰符对应表.md](./Service功能及修饰符对应表.md) - Service接口方法设计规范
+- [数据库设计.md](./数据库设计.md) - 数据库表结构设计
+
 ## License
 
-本项目用于学习与课程设计场景，可根据实际需要补充开源许可证（如 MIT）。
-
----
-
-如果你需要，我也可以继续为这个项目补充：
-
-- `接口文档模板（REST API 清单）`
-- `数据库初始化 SQL`
-- `课程设计答辩版功能清单与分工说明`
+本项目用于学习与课程设计场景
