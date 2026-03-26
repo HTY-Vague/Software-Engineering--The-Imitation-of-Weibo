@@ -14,7 +14,7 @@ import cn.edu.zut.softwareengineering.service.UserService;
 
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/user")// 用户相关接口
 public class UserController {
 
     private final UserService userService;
@@ -24,7 +24,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/profile")
+    @PostMapping("/profile")// 获取用户信息
     public ResponseEntity<User> getProfile(@RequestBody User user) {
         Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
         return ResponseEntity.ok(userService.getProfile(userId));
@@ -32,14 +32,13 @@ public class UserController {
     }
 
 
-    @PostMapping("/update/profile")
-
+    @PostMapping("/update/profile")// 更新用户信息
     public void updateProfile(@RequestBody User user) {
 
         userService.updateProfile(user);
     }
 
-    @PostMapping("/update/password")
+    @PostMapping("/update/password")// 更新密码
     public void updatePassword(@RequestBody User user,
                                @RequestParam String oldPassword,
                                @RequestParam String newPassword) {
@@ -48,20 +47,20 @@ public class UserController {
 
     }
 
-    @PostMapping("/posts")
+    @PostMapping("/posts")// 获取用户帖子
     public ResponseEntity<?> getPosts(@RequestBody User user) {
         Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
         return ResponseEntity.ok(userService.getPosts(userId));
 
     }
 
-    @PostMapping("/delete/post")
+    @PostMapping("/delete/post")// 删除用户帖子
     public void deletePost(@RequestParam Long postId) {
         userService.deletePost(postId);
 
     }
 
-    @PostMapping("/comments")
+    @PostMapping("/comments")// 获取用户评论
     public ResponseEntity<?> getComments(@RequestBody User user) {
         Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
         return ResponseEntity.ok(userService.getComments(userId));

@@ -20,7 +20,7 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/admin")// 管理员相关接口
 public class AdminController {
 
     private final ForumBoardService boardService;
@@ -31,43 +31,43 @@ public class AdminController {
         this.boardService = boardService;
     }
 
-    @GetMapping("/users")
+    @GetMapping("/users")// 获取所有用户
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @PutMapping("/users/{userId}/status")
+    @PutMapping("/users/{userId}/status")// 启用/禁用用户
     public void updateUserStatus(@PathVariable Long userId, @RequestBody Integer status) {
         userService.updateUserStatus(userId, status);
     }
 
-    @GetMapping("/forums")
+    @GetMapping("/forums")// 获取所有论坛板块
     public ResponseEntity<List<ForumBoard>> getBoards() {
         return ResponseEntity.ok(boardService.getBoards());
     }
 
-    @PostMapping("/forums")
+    @PostMapping("/forums")// 添加论坛板块
     public ResponseEntity<ForumBoard> addBoard(@RequestBody ForumBoard forumBoard) {
         boardService.addBoard(forumBoard);
         return ResponseEntity.ok(forumBoard);
     }
 
-    @PutMapping("/forums/{forumId}")
+    @PutMapping("/forums/{forumId}")// 更新论坛板块
     public void updateForum(@PathVariable Integer forumId, @RequestBody ForumBoard forumBoard) {
         boardService.updateBoard(forumBoard);
     }
 
-    @PutMapping("/forums/{forumId}/status")
+    @PutMapping("/forums/{forumId}/status")// 启用/禁用论坛板块
     public void updateForumStatus(@PathVariable Integer forumId, @RequestBody Integer status) {
         boardService.updateBoardStatus(forumId, status);
     }
 
-    @PutMapping("/forums/sort")
+    @PutMapping("/forums/sort")// 排序论坛板块
     public void sortForums() {
         boardService.sortBoards(null);
     }
 
-    @DeleteMapping("/forums/{forumId}")
+    @DeleteMapping("/forums/{forumId}")// 删除论坛板块
     public void deleteForum(@PathVariable Integer forumId) {
         boardService.deleteBoard(forumId);
     }

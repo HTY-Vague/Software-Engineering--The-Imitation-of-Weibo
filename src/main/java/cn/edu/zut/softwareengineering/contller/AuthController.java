@@ -14,7 +14,7 @@ import cn.edu.zut.softwareengineering.service.UserService;
 
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/auth")// 认证相关接口
 public class AuthController {
     private final UserService userService;
     
@@ -24,19 +24,19 @@ public class AuthController {
 
 
 
-    @PostMapping("/login")
+    @PostMapping("/login")// 用户登录
     public ResponseEntity<User> login(@RequestBody User user) {
         User result = userService.login(user);
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/register")
+    @PostMapping("/register")// 用户注册
     public ResponseEntity<User> register(@RequestBody User user) {
         User result = userService.register(user);
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/logout")// 用户注销
     public ResponseEntity<Void> logout() {
 
         return ResponseEntity.ok().build();
