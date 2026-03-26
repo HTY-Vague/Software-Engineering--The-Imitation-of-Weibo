@@ -84,9 +84,16 @@
 - 二级回复（楼中楼）
 - 评论列表展示
 - 删除评论
-- 评论点赞（可选）
+- 评论点赞
 
-### 5) 后台管理模块
+### 5) 点赞模块
+
+- 帖子点赞
+- 评论点赞
+- 点赞数统计
+- 查询用户点赞历史
+
+### 6) 后台管理模块
 
 - 管理员登录
 - 用户管理（启用/禁用、删除）
@@ -115,6 +122,20 @@ MySQL 数据库
 
 ## 技术栈
 
+### 后端
+
+- **Java**：21
+- **Spring Boot**：3.3.5
+- **Spring Security**：6.x（Spring Boot 内置）
+- **JWT 认证**：0.11.5
+- **MyBatis Plus**：3.5.7
+- **数据库驱动**：MySQL Connector/J
+- **密码加密**：BCrypt
+- **API 文档**：Knife4j 4.4.0
+- **工具库**：Hutool 5.8.27
+- **参数校验**：Validation（Spring Boot 内置）
+- **构建工具**：Maven 3.8+
+
 ### 前端
 
 - Vue 3
@@ -125,17 +146,9 @@ MySQL 数据库
 - Vue Router
 - WangEditor（富文本编辑器）
 
-### 后端
-
-- Spring Boot 3
-- Spring Security
-- JWT 认证
-- MyBatis Plus
-- BCrypt 密码加密
-
 ### 数据库
 
-- MySQL 8
+- MySQL 8.x
 
 ## 后端架构设计
 
@@ -158,6 +171,7 @@ MySQL数据库   ← 数据库存储
 - `ForumBoardController.java` - 板块管理
 - `ForumPostController.java` - 帖子管理
 - `ForumCommentController.java` - 评论管理
+- `ForumLikeController.java` - 点赞管理
 - `AdminController.java` - 后台管理（用户管理、板块管理、内容管理）
 
 ### Service 接口设计
@@ -166,6 +180,7 @@ MySQL数据库   ← 数据库存储
 - `ForumBoardService` - 板块业务逻辑
 - `ForumPostService` - 帖子业务逻辑
 - `ForumCommentService` - 评论业务逻辑
+- `ForumLikeService` - 点赞业务逻辑
 
 ### Mapper 接口设计
 
@@ -182,13 +197,25 @@ MySQL数据库   ← 数据库存储
 - `forum_board`：板块表
 - `forum_post`：帖子表
 - `forum_comment`：评论表
-- `forum_like`：点赞表（可选）
+- `forum_like`：点赞表（支持帖子和评论点赞）
+
+### 点赞表结构升级
+
+点赞表采用**通用点赞设计**，支持帖子和评论的统一点赞管理。表结构包含：
+
+- `like_id`：点赞ID
+- `target_type`：点赞目标类型（1=帖子，2=评论）
+- `target_id`：目标ID（帖子ID或评论ID）
+- `user_id`：点赞用户ID
+- `create_time`：点赞时间
+
+通过 `(target_type, target_id, user_id)` 唯一约束确保同一用户不重复点赞同一对象。
 
 ### 代码侧命名（驼峰）
 
 - 实体类：`User`、`ForumBoard`、`ForumPost`、`ForumComment`、`ForumLike`
 - Mapper 接口：`UserMapper`、`ForumBoardMapper`、`ForumPostMapper`、`ForumCommentMapper`、`ForumLikeMapper`
-- Service 接口：`UserService`、`ForumBoardService`、`ForumPostService`、`ForumCommentService`
+- Service 接口：`UserService`、`ForumBoardService`、`ForumPostService`、`ForumCommentService`、`ForumLikeService`
 - Mapper XML：`UserMapper.xml`、`ForumBoardMapper.xml`、`ForumPostMapper.xml`、`ForumCommentMapper.xml`、`ForumLikeMapper.xml`
 
 ## API 接口设计规范
@@ -202,7 +229,21 @@ MySQL数据库   ← 数据库存储
 | 板块 | `/boards/*` | 板块列表、板块详情 |
 | 帖子 | `/posts/*` | 帖子列表、发布、编辑、删除 |
 | 评论 | `/comments/*` | 评论列表、发表评论 |
+| 点赞 | `/likes/*` | 点赞操作、点赞列表、取消点赞 |
 | 管理员 | `/admin/*` | 用户管理、板块管理、内容管理 |
+
+### API 文档访问
+
+系统集成 **Knife4j** 作为 API 文档工具，启动后可通过以下地址访问：
+
+```
+http://localhost:8080/doc.html
+```
+
+Swagger 原生 UI 地址：
+```
+http://localhost:8080/swagger-ui.html
+```
 
 ### HTTP 方法规范
 
@@ -244,30 +285,40 @@ src/main/java/cn/edu/zut/softwareengineering/
 │   ├── ForumBoardController.java
 │   ├── ForumPostController.java
 │   ├── ForumCommentController.java
+│   ├── ForumLikeController.java
 │   └── AdminController.java
 ├── service/                 ← 业务逻辑层
 │   ├── UserService.java
 │   ├── ForumBoardService.java
 │   ├── ForumPostService.java
 │   ├── ForumCommentService.java
+│   ├── ForumLikeService.java
 │   └── Impl/             ← Service实现类
 │       ├── UserServiceImpl.java
 │       ├── ForumBoardServiceImpl.java
 │       ├── ForumPostServiceImpl.java
-│       └── ForumCommentServiceImpl.java
+│       ├── ForumCommentServiceImpl.java
+│       └── ForumLikeServiceImpl.java
 ├── mapper/                  ← 数据访问层
 │   ├── UserMapper.java
 │   ├── ForumBoardMapper.java
 │   ├── ForumPostMapper.java
-│   └── ForumCommentMapper.java
+│   ├── ForumCommentMapper.java
+│   └── ForumLikeMapper.java
 ├── entity/                   ← 实体类
 │   ├── User.java
 │   ├── ForumBoard.java
 │   ├── ForumPost.java
-│   └── ForumComment.java
-└── config/                   ← 配置类
-    ├── SecurityConfig.java
-    └── JwtConfig.java
+│   ├── ForumComment.java
+│   └── ForumLike.java
+├── config/                   ← 配置类
+│   ├── SecurityConfig.java
+│   ├── JwtConfig.java
+│   └── MyBatisConfig.java
+└── utils/                    ← 工具类
+    ├── JwtUtil.java
+    ├── PasswordEncoderUtil.java
+    └── ResultUtil.java
 ```
 
 ## 安全设计
@@ -302,10 +353,11 @@ src/main/java/cn/edu/zut/softwareengineering/
 
 ### 环境要求
 
-- JDK 17+（建议与 Spring Boot 3 匹配）
-- Maven 3.8+
-- Node.js 18+
-- MySQL 8
+- **JDK 21**（Spring Boot 3.3.5 推荐）
+- **Maven** 3.8+
+- **Node.js** 18+
+- **MySQL** 8.x
+- **IDE**：IntelliJ IDEA 或 VS Code（Spring Boot插件）
 
 ### 本地运行
 
@@ -314,22 +366,38 @@ src/main/java/cn/edu/zut/softwareengineering/
 在 `src/main/resources/application.properties` 中配置数据库连接：
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/your_database
-spring.datasource.username=your_username
+spring.datasource.url=jdbc:mysql://localhost:3306/software_engineering_forum
+spring.datasource.username=root
 spring.datasource.password=your_password
+spring.jpa.hibernate.ddl-auto=validate
 ```
 
 #### 2) 初始化数据库
 
-执行 `SoftwareEngineering.sql` 创建数据库和表。
+执行 `SoftwareEngineering.sql` 创建数据库和表：
+
+```bash
+mysql -u root -p < SoftwareEngineering.sql
+```
+
+或在 MySQL 客户端中直接执行脚本文件。
 
 #### 3) 启动后端
 
 ```bash
+# 方式1：使用 Maven
 mvn spring-boot:run
+
+# 方式2：构建 JAR 并运行
+mvn clean package
+java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 ```
 
-#### 4) 启动前端
+后端启动成功后，访问 API 文档：
+- Knife4j UI：http://localhost:8080/doc.html
+- Swagger UI：http://localhost:8080/swagger-ui.html
+
+#### 4) 启动前端（如适用）
 
 ```bash
 cd forum-web
@@ -354,8 +422,9 @@ npm run dev
 
 ## 相关文档
 
+- [数据库设计.md](./数据库设计.md) - 数据库表结构详细设计
 - [Service功能及修饰符对应表.md](./Service功能及修饰符对应表.md) - Service接口方法设计规范
-- [数据库设计.md](./数据库设计.md) - 数据库表结构设计
+- [forum_like_migration.sql](./forum_like_migration.sql) - 点赞表结构升级脚本（数据迁移）
 
 ## License
 
