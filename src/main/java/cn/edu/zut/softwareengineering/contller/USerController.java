@@ -26,7 +26,7 @@ public class UserController {
 
     @PostMapping("/profile")// 获取用户信息
     public ResponseEntity<User> getProfile(@RequestBody User user) {
-        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        Integer userId = user != null ? user.getUserId() : null;
         return ResponseEntity.ok(userService.getProfile(userId));
 
     }
@@ -42,27 +42,27 @@ public class UserController {
     public void updatePassword(@RequestBody User user,
                                @RequestParam String oldPassword,
                                @RequestParam String newPassword) {
-        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        Integer userId = user != null ? user.getUserId() : null;
         userService.updatePassword(userId, oldPassword, newPassword);
 
     }
 
     @PostMapping("/posts")// 获取用户帖子
     public ResponseEntity<?> getPosts(@RequestBody User user) {
-        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        Integer userId = user != null ? user.getUserId() : null;
         return ResponseEntity.ok(userService.getPosts(userId));
 
     }
 
     @PostMapping("/delete/post")// 删除用户帖子
-    public void deletePost(@RequestParam Long postId) {
+    public void deletePost(@RequestParam Integer postId) {
         userService.deletePost(postId);
 
     }
 
     @PostMapping("/comments")// 获取用户评论
     public ResponseEntity<?> getComments(@RequestBody User user) {
-        Long userId = user != null && user.getUserId() != null ? user.getUserId().longValue() : null;
+        Integer userId = user != null ? user.getUserId() : null;
         return ResponseEntity.ok(userService.getComments(userId));
 
     }

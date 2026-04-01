@@ -37,7 +37,7 @@ public class AdminController {
     }
 
     @PutMapping("/users/{userId}/status")// 启用/禁用用户
-    public void updateUserStatus(@PathVariable Long userId, @RequestBody Integer status) {
+    public void updateUserStatus(@PathVariable Integer userId, @RequestBody Integer status) {
         userService.updateUserStatus(userId, status);
     }
 

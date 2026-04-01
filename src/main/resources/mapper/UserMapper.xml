@@ -17,4 +17,85 @@
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
+    <!-- 用户登录：根据用户名查询用户信息 -->
+    <select id="login" parameterType="cn.edu.zut.softwareengineering.entity.User" resultMap="BaseResultMap">
+        SELECT user_id, username, password, nickname, avatar, signature, role, status, create_time, update_time
+        FROM sys_user
+        WHERE username = #{username}
+          AND status = 1
+    </select>
+
+    <!-- 用户注册：插入新用户 -->
+    <insert id="register" parameterType="cn.edu.zut.softwareengineering.entity.User" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO sys_user (username, password, nickname, role, status)
+        VALUES (#{username}, #{password}, #{nickname}, #{role}, 1)
+    </insert>
+
+    <!-- 用户注销：更新最后活动时间 -->
+    <update id="logout" parameterType="java.lang.Integer">
+        UPDATE sys_user
+        SET update_time = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 获取用户信息：根据用户ID查询 -->
+    <select id="getUserById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        SELECT user_id, username, password, nickname, avatar, signature, role, status, create_time, update_time
+        FROM sys_user
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 更新用户资料：动态更新昵称、头像、个性签名 -->
+    <update id="updateProfile" parameterType="cn.edu.zut.softwareengineering.entity.User">
+        UPDATE sys_user
+        <set>
+            <if test="nickname != null and nickname != ''">nickname = #{nickname},</if>
+            <if test="avatar != null and avatar != ''">avatar = #{avatar},</if>
+            <if test="signature != null and signature != ''">signature = #{signature},</if>
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新用户密码：验证旧密码后更新新密码 -->
+    <update id="updatePassword">
+        UPDATE sys_user
+        SET password = #{newPassword},
+            update_time = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+          AND password = #{oldPassword}
+    </update>
+
+    <!-- 获取用户帖子：查询用户发布的帖子列表 -->
+    <select id="getUserPosts" parameterType="java.lang.Integer" resultType="cn.edu.zut.softwareengineering.entity.ForumPost">
+        SELECT post_id, board_id, author_id, title, content, view_count, like_count, comment_count, is_top, status, create_time, update_time
+        FROM forum_post
+        WHERE author_id = #{userId}
+          AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取用户评论：查询用户发表的评论列表 -->
+    <select id="getUserComments" parameterType="java.lang.Integer" resultType="cn.edu.zut.softwareengineering.entity.ForumComment">
+        SELECT comment_id, post_id, user_id, parent_comment_id, reply_user_id, content, like_count, status, create_time, update_time
+        FROM forum_comment
+        WHERE user_id = #{userId}
+          AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取所有用户：管理员查询所有用户列表 -->
+    <select id="getAllUsers" resultMap="BaseResultMap">
+        SELECT user_id, username, password, nickname, avatar, signature, role, status, create_time, update_time
+        FROM sys_user
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新用户状态：管理员启用或禁用用户 -->
+    <update id="updateUserStatus">
+        UPDATE sys_user
+        SET status = #{status},
+            update_time = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+    </update>
+
 </mapper>
