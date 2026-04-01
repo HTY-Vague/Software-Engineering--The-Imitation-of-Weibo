@@ -234,16 +234,10 @@ MySQL数据库   ← 数据库存储
 
 ### API 文档访问
 
-系统集成 **Knife4j** 作为 API 文档工具，启动后可通过以下地址访问：
+系统集成 **Knife4j** 作为 API 文档工具，启动后可通过以下地址访问：http://122.51.87.179:8080/doc.html
 
-```
-http://localhost:8080/doc.html
-```
 
-Swagger 原生 UI 地址：
-```
-http://localhost:8080/swagger-ui.html
-```
+Swagger 原生 UI 地址：http://122.51.87.179:8080/swagger-ui.html
 
 ### HTTP 方法规范
 
@@ -359,14 +353,19 @@ src/main/java/cn/edu/zut/softwareengineering/
 - **MySQL** 8.x
 - **IDE**：IntelliJ IDEA 或 VS Code（Spring Boot插件）
 
-### 本地运行
+### 云服务器部署
+
+#### 服务器信息
+
+- **应用服务器**：122.51.87.179
+- **数据库服务器**：101.35.44.133
 
 #### 1) 配置数据库
 
 在 `src/main/resources/application.properties` 中配置数据库连接：
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/software_engineering_forum
+spring.datasource.url=jdbc:mysql://101.35.44.133:3306/software_engineering_forum
 spring.datasource.username=root
 spring.datasource.password=your_password
 spring.jpa.hibernate.ddl-auto=validate
@@ -374,7 +373,7 @@ spring.jpa.hibernate.ddl-auto=validate
 
 #### 2) 初始化数据库
 
-执行 `SoftwareEngineering.sql` 创建数据库和表：
+在数据库服务器（101.35.44.133）上执行 `SoftwareEngineering.sql` 创建数据库和表：
 
 ```bash
 mysql -u root -p < SoftwareEngineering.sql
@@ -382,7 +381,9 @@ mysql -u root -p < SoftwareEngineering.sql
 
 或在 MySQL 客户端中直接执行脚本文件。
 
-#### 3) 启动后端
+#### 3) 部署后端
+
+在应用服务器（122.51.87.179）上执行：
 
 ```bash
 # 方式1：使用 Maven
@@ -394,15 +395,18 @@ java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 ```
 
 后端启动成功后，访问 API 文档：
-- Knife4j UI：http://localhost:8080/doc.html
-- Swagger UI：http://localhost:8080/swagger-ui.html
+- Knife4j UI：http://122.51.87.179:8080/doc.html
+- Swagger UI：http://122.51.87.179:8080/swagger-ui.html
 
-#### 4) 启动前端（如适用）
+#### 4) 部署前端（如适用）
+
+在应用服务器（122.51.87.179）上执行：
 
 ```bash
 cd forum-web
 npm install
-npm run dev
+npm run build
+# 将dist目录部署到Web服务器
 ```
 
 ## 开发周期（课程设计建议）
@@ -429,3 +433,4 @@ npm run dev
 ## License
 
 本项目用于学习与课程设计场景
+
