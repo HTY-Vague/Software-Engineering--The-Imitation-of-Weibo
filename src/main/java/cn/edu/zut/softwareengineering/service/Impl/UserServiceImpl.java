@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void logout(Long userId) {
+	public void logout(Integer userId) {
 		if (userId == null) {
 			return;
 		}
@@ -36,7 +36,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public User getProfile(Long userId) {
+	public User getProfile(Integer userId) {
 		if (userId == null) {
 			return null;
 		}
@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updatePassword(Long userId, String oldPassword, String newPassword) {
+	public void updatePassword(Integer userId, String oldPassword, String newPassword) {
 		if (userId == null || oldPassword == null || newPassword == null) {
 			return;
 		}
@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public List<ForumPost> getPosts(Long userId) {
+	public List<ForumPost> getPosts(Integer userId) {
 		if (userId == null) {
 			return List.of();
 		}
@@ -65,12 +65,12 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void deletePost(Long postId) {
+	public void deletePost(Integer postId) {
 		throw new UnsupportedOperationException("deletePost is not supported by UserMapper");
 	}
 
 	@Override
-	public List<ForumComment> getComments(Long userId) {
+	public List<ForumComment> getComments(Integer userId) {
 		if (userId == null) {
 			return List.of();
 		}
@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserStatus(Long userId, Integer status) {
+	public void updateUserStatus(Integer userId, Integer status) {
 		userMapper.updateUserStatus(userId, status);
 	}
 
