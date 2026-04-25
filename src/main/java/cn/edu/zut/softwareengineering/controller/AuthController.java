@@ -1,4 +1,4 @@
-package cn.edu.zut.softwareengineering.contller;
+package cn.edu.zut.softwareengineering.controller;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
