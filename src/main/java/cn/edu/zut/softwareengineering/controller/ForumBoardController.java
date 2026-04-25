@@ -1,4 +1,4 @@
-package cn.edu.zut.softwareengineering.contller;
+package cn.edu.zut.softwareengineering.controller;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
 import cn.edu.zut.softwareengineering.entity.ForumPost;
