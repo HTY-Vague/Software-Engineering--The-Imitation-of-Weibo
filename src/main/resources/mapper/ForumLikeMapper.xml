@@ -6,9 +6,43 @@
 
     <resultMap id="BaseResultMap" type="cn.edu.zut.softwareengineering.entity.ForumLike">
         <id column="like_id" property="likeId"/>
-        <result column="post_id" property="postId"/>
+        <result column="target_type" property="targetType"/>
+        <result column="target_id" property="targetId"/>
         <result column="user_id" property="userId"/>
         <result column="create_time" property="createTime"/>
     </resultMap>
+
+    <insert id="insertLike" parameterType="cn.edu.zut.softwareengineering.entity.ForumLike" useGeneratedKeys="true" keyProperty="likeId">
+        INSERT INTO forum_like (target_type, target_id, user_id)
+        VALUES (#{targetType}, #{targetId}, #{userId})
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM forum_like
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+          AND user_id = #{userId}
+    </delete>
+
+    <select id="getUserLike" resultMap="BaseResultMap">
+        SELECT like_id, target_type, target_id, user_id, create_time
+        FROM forum_like
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+          AND user_id = #{userId}
+    </select>
+
+    <select id="countByTarget" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM forum_like
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+    </select>
+
+    <delete id="deleteByTarget">
+        DELETE FROM forum_like
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+    </delete>
 
 </mapper>

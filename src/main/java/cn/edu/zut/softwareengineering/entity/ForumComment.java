@@ -1,6 +1,7 @@
 package cn.edu.zut.softwareengineering.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.Data;
 
@@ -10,10 +11,11 @@ public class ForumComment {
     private Integer postId;
     private Integer userId;
     private Integer parentCommentId;
-    private Integer replyCommentId;
+    private Integer replyUserId;
     private String content;
     private Integer likeCount;
     private String status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private List<ForumComment> children;
 }

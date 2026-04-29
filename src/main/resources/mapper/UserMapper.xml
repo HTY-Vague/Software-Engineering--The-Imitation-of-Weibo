@@ -25,6 +25,12 @@
           AND status = 1
     </select>
 
+    <select id="getUserByUsername" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT user_id, username, password, nickname, avatar, signature, role, status, create_time, update_time
+        FROM sys_user
+        WHERE username = #{username}
+    </select>
+
     <!-- 用户注册：插入新用户 -->
     <insert id="register" parameterType="cn.edu.zut.softwareengineering.entity.User" useGeneratedKeys="true" keyProperty="userId">
         INSERT INTO sys_user (username, password, nickname, role, status)
@@ -62,7 +68,6 @@
         SET password = #{newPassword},
             update_time = CURRENT_TIMESTAMP
         WHERE user_id = #{userId}
-          AND password = #{oldPassword}
     </update>
 
     <!-- 获取用户帖子：查询用户发布的帖子列表 -->
