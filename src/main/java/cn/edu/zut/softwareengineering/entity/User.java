@@ -1,5 +1,6 @@
 package cn.edu.zut.softwareengineering.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 import lombok.Data;
@@ -14,6 +15,8 @@ public class User {
     private String signature;
     private String role;
     private String status;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createTime;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updateTime;
 }

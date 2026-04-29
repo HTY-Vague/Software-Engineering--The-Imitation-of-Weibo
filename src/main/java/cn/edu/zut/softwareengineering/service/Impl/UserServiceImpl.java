@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public User login(User user) {
-		if (user == null || user.getUsername() == null || user.getPassword() == null) {
+		if (user == null || user.getUsername() == null || user.getUsername().isBlank() || user.getPassword() == null || user.getPassword().isBlank()) {
 			throw new IllegalArgumentException("用户名和密码不能为空");
 		}
 		User dbUser = userMapper.login(user);
@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public User register(User user) {
-		if (user == null || user.getUsername() == null || user.getPassword() == null) {
+		if (user == null || user.getUsername() == null || user.getUsername().isBlank() || user.getPassword() == null || user.getPassword().isBlank()) {
 			throw new IllegalArgumentException("用户名和密码不能为空");
 		}
 		if (userMapper.getUserByUsername(user.getUsername()) != null) {

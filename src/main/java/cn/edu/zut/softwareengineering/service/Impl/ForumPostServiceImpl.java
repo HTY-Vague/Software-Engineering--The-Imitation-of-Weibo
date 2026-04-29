@@ -1,6 +1,7 @@
 package cn.edu.zut.softwareengineering.service.Impl;
 
 import cn.edu.zut.softwareengineering.entity.ForumPost;
+import cn.edu.zut.softwareengineering.mapper.ForumCommentMapper;
 import cn.edu.zut.softwareengineering.mapper.ForumLikeMapper;
 import cn.edu.zut.softwareengineering.mapper.ForumPostMapper;
 import cn.edu.zut.softwareengineering.service.ForumPostService;
@@ -14,10 +15,14 @@ public class ForumPostServiceImpl implements ForumPostService {
 
     private final ForumPostMapper forumPostMapper;
     private final ForumLikeMapper forumLikeMapper;
+    private final ForumCommentMapper forumCommentMapper;
 
-    public ForumPostServiceImpl(ForumPostMapper forumPostMapper, ForumLikeMapper forumLikeMapper) {
+    public ForumPostServiceImpl(ForumPostMapper forumPostMapper,
+                                ForumLikeMapper forumLikeMapper,
+                                ForumCommentMapper forumCommentMapper) {
         this.forumPostMapper = forumPostMapper;
         this.forumLikeMapper = forumLikeMapper;
+        this.forumCommentMapper = forumCommentMapper;
     }
 
     @Override
@@ -69,6 +74,8 @@ public class ForumPostServiceImpl implements ForumPostService {
         }
         forumPostMapper.deletePost(postId);
         forumLikeMapper.deleteByTarget(1, postId);
+        forumLikeMapper.deleteCommentLikesByPostId(postId);
+        forumCommentMapper.deleteCommentsByPostId(postId);
     }
 
     @Override

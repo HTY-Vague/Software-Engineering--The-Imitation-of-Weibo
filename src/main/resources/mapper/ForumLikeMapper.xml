@@ -45,6 +45,16 @@
           AND target_id = #{targetId}
     </delete>
 
+    <delete id="deleteCommentLikesByPostId" parameterType="java.lang.Integer">
+        DELETE FROM forum_like
+        WHERE target_type = 2
+          AND target_id IN (
+              SELECT comment_id
+              FROM forum_comment
+              WHERE post_id = #{postId}
+          )
+    </delete>
+
     <select id="countLikes" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM forum_like
