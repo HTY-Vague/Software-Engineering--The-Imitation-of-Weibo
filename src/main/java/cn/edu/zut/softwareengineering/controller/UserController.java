@@ -5,6 +5,8 @@ import cn.edu.zut.softwareengineering.service.ForumPostService;
 import cn.edu.zut.softwareengineering.service.UserService;
 import cn.edu.zut.softwareengineering.utils.ResultUtil;
 import cn.edu.zut.softwareengineering.utils.SecurityUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/user")// 用户相关接口
+@Tag(name = "用户接口", description = "当前登录用户的资料、密码、帖子和评论")
 public class UserController {
 
     private final UserService userService;
@@ -27,6 +30,7 @@ public class UserController {
     }
 
     @PostMapping("/profile")// 获取用户信息
+    @Operation(summary = "获取当前用户资料")
     public ResultUtil.Result<User> getProfile() {
         return ResultUtil.success(userService.getProfile(SecurityUtil.getCurrentUserId()));
 
@@ -34,6 +38,7 @@ public class UserController {
 
 
     @PostMapping("/update/profile")// 更新用户信息
+    @Operation(summary = "更新当前用户资料")
     public ResultUtil.Result<Void> updateProfile(@RequestBody User user) {
         user.setUserId(SecurityUtil.getCurrentUserId());
         userService.updateProfile(user);
@@ -41,6 +46,7 @@ public class UserController {
     }
 
     @PostMapping("/update/password")// 更新密码
+    @Operation(summary = "修改当前用户密码")
     public ResultUtil.Result<Void> updatePassword(@RequestParam String oldPassword,
                                                   @RequestParam String newPassword) {
         userService.updatePassword(SecurityUtil.getCurrentUserId(), oldPassword, newPassword);
@@ -49,12 +55,14 @@ public class UserController {
     }
 
     @PostMapping("/posts")// 获取用户帖子
+    @Operation(summary = "获取当前用户帖子")
     public ResultUtil.Result<?> getPosts() {
         return ResultUtil.success(userService.getPosts(SecurityUtil.getCurrentUserId()));
 
     }
 
     @PostMapping("/delete/post")// 删除用户帖子
+    @Operation(summary = "删除当前用户自己的帖子")
     public ResultUtil.Result<Void> deletePost(@RequestParam Integer postId) {
         forumPostService.deleteOwnPost(postId, SecurityUtil.getCurrentUserId());
         return ResultUtil.success();
@@ -62,6 +70,7 @@ public class UserController {
     }
 
     @PostMapping("/comments")// 获取用户评论
+    @Operation(summary = "获取当前用户评论")
     public ResultUtil.Result<?> getComments() {
         return ResultUtil.success(userService.getComments(SecurityUtil.getCurrentUserId()));
 
