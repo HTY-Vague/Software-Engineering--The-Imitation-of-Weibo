@@ -21,4 +21,6 @@ public interface ForumBoardMapper {
     public void deleteBoard(Integer boardId);
 
     public List<ForumPost> getBoardPosts(Integer boardId);
+
+    public Integer countEnabledBoards();
 }

@@ -21,4 +21,6 @@ public interface UserMapper {
     List<ForumComment> getUserComments(Integer userId);
     List<User> getAllUsers();
     void updateUserStatus(@Param("userId") Integer userId, @Param("status") Integer status);
+    Integer countUsers();
+    Integer countActiveUsers();
 }

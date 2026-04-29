@@ -84,4 +84,20 @@ public class ForumCommentServiceImpl implements ForumCommentService {
         forumLikeMapper.deleteByTarget(2, commentId);
         forumPostMapper.decrementCommentCount(comment.getPostId());
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteOwnComment(Integer commentId, Integer operatorId) {
+        if (operatorId == null) {
+            throw new IllegalArgumentException("operatorId 不能为空");
+        }
+        ForumComment comment = forumCommentMapper.getCommentById(commentId);
+        if (comment == null) {
+            return;
+        }
+        if (!operatorId.equals(comment.getUserId())) {
+            throw new IllegalStateException("只能删除自己的评论");
+        }
+        deleteComment(commentId);
+    }
 }

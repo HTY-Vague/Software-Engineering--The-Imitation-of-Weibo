@@ -107,4 +107,18 @@
           AND status = 1
     </update>
 
+    <select id="countPosts" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM forum_post
+        WHERE status = 1
+    </select>
+
+    <select id="getHotPosts" resultMap="BaseResultMap">
+        SELECT post_id, board_id, author_id, title, content, view_count, like_count, comment_count, is_top, status, create_time, update_time
+        FROM forum_post
+        WHERE status = 1
+        ORDER BY view_count DESC, like_count DESC, comment_count DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

@@ -35,7 +35,7 @@ public class ForumCommentController {
 
     @PostMapping("/delete")
     public ResultUtil.Result<Void> deleteComment(@RequestParam Integer commentId) {
-        forumCommentService.deleteComment(commentId);
+        forumCommentService.deleteOwnComment(commentId, SecurityUtil.getCurrentUserId());
         return ResultUtil.success();
     }
 }

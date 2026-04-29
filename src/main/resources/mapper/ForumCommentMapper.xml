@@ -61,4 +61,10 @@
           AND status = 1
     </update>
 
+    <select id="countComments" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM forum_comment
+        WHERE status = 1
+    </select>
+
 </mapper>
