@@ -3,12 +3,10 @@ package cn.edu.zut.softwareengineering.utils;
 import cn.edu.zut.softwareengineering.config.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,8 +18,7 @@ public class JwtUtil {
     private JwtConfig jwtConfig;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor("software-engineering-secret-key-for-jwt-token-generation-2024"
-                .getBytes(StandardCharsets.UTF_8));
+        return jwtConfig.getSigningKey();
     }
 
     public String generateToken(Integer userId, String username, String role) {
