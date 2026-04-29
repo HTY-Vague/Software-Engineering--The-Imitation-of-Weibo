@@ -234,10 +234,10 @@ MySQL数据库   ← 数据库存储
 
 ### API 文档访问
 
-系统集成 **Knife4j** 作为 API 文档工具，启动后可通过以下地址访问：http://122.51.87.179:8080/doc.html
+系统集成 **Knife4j** 作为 API 文档工具，本地启动后可通过以下地址访问：
 
-
-Swagger 原生 UI 地址：http://122.51.87.179:8080/swagger-ui.html
+- Knife4j UI：http://localhost:8080/doc.html
+- Swagger UI：http://localhost:8080/swagger-ui.html
 
 ### HTTP 方法规范
 
@@ -250,13 +250,13 @@ Swagger 原生 UI 地址：http://122.51.87.179:8080/swagger-ui.html
 
 ### Controller 返回类型规范
 
-| 操作类型 | Controller返回类型 | Service返回类型 | 说明 |
-|---------|------------------|-----------------|------|
-| 查询单个 | `ResponseEntity<T>` | `T` | 返回实体对象 |
-| 查询列表 | `ResponseEntity<List<T>>` | `List<T>` | 返回实体列表 |
-| 新增 | `ResponseEntity<T>` | `T` | 返回创建的实体 |
-| 更新 | `void` | `void` | Spring自动返回200 OK |
-| 删除 | `void` | `void` | Spring自动返回200 OK |
+所有 Controller 统一返回 `ResultUtil.Result<T>`，响应结构包含：
+
+| 字段 | 说明 |
+|------|------|
+| `code` | 业务状态码，成功为 `200` |
+| `message` | 响应消息 |
+| `data` | 响应数据，删除、更新等无返回数据时为 `null` |
 
 ### Service 方法命名规范
 
@@ -362,14 +362,18 @@ src/main/java/cn/edu/zut/softwareengineering/
 
 #### 1) 配置数据库
 
-在 `src/main/resources/application.properties` 中配置数据库连接：
+项目默认从环境变量读取数据库与 JWT 配置，避免把真实账号、密码和密钥提交到仓库。可参考 `.env.example` 准备本地配置：
 
 ```properties
-spring.datasource.url=jdbc:mysql://101.35.44.133:3306/software_engineering_forum
-spring.datasource.username=root
-spring.datasource.password=your_password
-spring.jpa.hibernate.ddl-auto=validate
+DB_URL=jdbc:mysql://localhost:3306/software_engineering_forum?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+DB_USERNAME=root
+DB_PASSWORD=your_password
+JWT_SECRET=replace_with_at_least_32_characters_secret
+JWT_EXPIRATION=86400000
+SERVER_PORT=8080
 ```
+
+`src/main/resources/application.properties` 已提供本地默认值。生产、演示或云服务器部署时，应通过环境变量覆盖以上配置。
 
 #### 2) 初始化数据库
 
@@ -395,8 +399,8 @@ java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 ```
 
 后端启动成功后，访问 API 文档：
-- Knife4j UI：http://122.51.87.179:8080/doc.html
-- Swagger UI：http://122.51.87.179:8080/swagger-ui.html
+- Knife4j UI：http://localhost:8080/doc.html
+- Swagger UI：http://localhost:8080/swagger-ui.html
 
 #### 4) 部署前端（如适用）
 
@@ -427,6 +431,7 @@ npm run build
 ## 相关文档
 
 - [数据库设计.md](./数据库设计.md) - 数据库表结构详细设计
+- [API接口清单.md](./API接口清单.md) - 当前后端接口清单与联调说明
 - [Service功能及修饰符对应表.md](./Service功能及修饰符对应表.md) - Service接口方法设计规范
 - [forum_like_migration.sql](./forum_like_migration.sql) - 点赞表结构升级脚本（数据迁移）
 
