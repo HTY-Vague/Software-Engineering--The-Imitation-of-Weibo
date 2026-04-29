@@ -1,6 +1,7 @@
 package cn.edu.zut.softwareengineering.service.Impl;
 
 import cn.edu.zut.softwareengineering.entity.ForumPost;
+import cn.edu.zut.softwareengineering.mapper.ForumCommentMapper;
 import cn.edu.zut.softwareengineering.mapper.ForumLikeMapper;
 import cn.edu.zut.softwareengineering.mapper.ForumPostMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,9 @@ class ForumPostServiceImplTest {
 
     @Mock
     private ForumLikeMapper forumLikeMapper;
+
+    @Mock
+    private ForumCommentMapper forumCommentMapper;
 
     @InjectMocks
     private ForumPostServiceImpl forumPostService;
@@ -68,16 +72,18 @@ class ForumPostServiceImplTest {
     }
 
     @Test
-    @DisplayName("删除帖子时软删除并清理帖子点赞")
-    void deletePostDeletesLikes() {
+    @DisplayName("删除帖子时软删除帖子、清理帖子点赞和评论点赞、软删除评论")
+    void deletePostDeletesLikesAndComments() {
         forumPostService.deletePost(1);
 
         verify(forumPostMapper).deletePost(1);
         verify(forumLikeMapper).deleteByTarget(1, 1);
+        verify(forumLikeMapper).deleteCommentLikesByPostId(1);
+        verify(forumCommentMapper).deleteCommentsByPostId(1);
     }
 
     @Test
-    @DisplayName("作者删除自己的帖子时允许删除")
+    @DisplayName("作者删除自己的帖子时允许删除并清理评论和点赞")
     void deleteOwnPostSuccess() {
         ForumPost post = new ForumPost();
         post.setPostId(1);
@@ -88,6 +94,8 @@ class ForumPostServiceImplTest {
 
         verify(forumPostMapper).deletePost(1);
         verify(forumLikeMapper).deleteByTarget(1, 1);
+        verify(forumLikeMapper).deleteCommentLikesByPostId(1);
+        verify(forumCommentMapper).deleteCommentsByPostId(1);
     }
 
     @Test

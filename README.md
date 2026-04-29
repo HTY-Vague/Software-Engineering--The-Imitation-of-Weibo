@@ -95,12 +95,11 @@
 
 ### 6) 后台管理模块
 
-- 管理员登录
-- 用户管理（启用/禁用、删除）
-- 板块管理（增删改查、排序）
-- 内容管理（帖子 / 评论删除）
-- 举报处理（可选）
-- 数据统计（可选）
+- 用户管理（列表、启用/禁用）
+- 板块管理（新增、编辑、删除、启用/禁用、排序）
+- 内容管理（帖子置顶、帖子/评论删除）
+- 统计概览（用户/板块/帖子/评论/点赞总数）
+- 热门帖子（按浏览量排序）
 
 ## 技术架构
 
@@ -188,6 +187,7 @@ MySQL数据库   ← 数据库存储
 - `ForumBoardMapper` - 板块数据访问
 - `ForumPostMapper` - 帖子数据访问
 - `ForumCommentMapper` - 评论数据访问
+- `ForumLikeMapper` - 点赞数据访问
 
 ## 数据库设计
 
@@ -220,17 +220,19 @@ MySQL数据库   ← 数据库存储
 
 ## API 接口设计规范
 
-### RESTful 接口设计
+### 接口路径一览
 
 | 模块 | 路径前缀 | 说明 |
 |--------|-----------|------|
-| 认证 | `/auth/*` | 注册、登录、退出 |
+| 认证 | `/auth/*` | 注册、登录、退出（公开） |
 | 用户 | `/user/*` | 个人信息、我的帖子、我的评论 |
-| 板块 | `/boards/*` | 板块列表、板块详情 |
-| 帖子 | `/posts/*` | 帖子列表、发布、编辑、删除 |
-| 评论 | `/comments/*` | 评论列表、发表评论 |
-| 点赞 | `/likes/*` | 点赞操作、点赞列表、取消点赞 |
-| 管理员 | `/admin/*` | 用户管理、板块管理、内容管理 |
+| 板块 | `/forum/*` | 板块列表、板块帖子 |
+| 帖子 | `/posts/*` | 发布、列表、详情、编辑、删除 |
+| 评论 | `/comments/*` | 发表、评论树、删除 |
+| 点赞 | `/likes/*` | 点赞、取消、状态、计数 |
+| 管理员 | `/admin/*` | 用户管理、板块管理、内容管理、统计（仅 ADMIN） |
+
+> 详细接口说明见 [API接口清单.md](./API接口清单.md)。
 
 ### API 文档访问
 
@@ -239,24 +241,15 @@ MySQL数据库   ← 数据库存储
 - Knife4j UI：http://localhost:8080/doc.html
 - Swagger UI：http://localhost:8080/swagger-ui.html
 
-### HTTP 方法规范
+### 统一响应格式
 
-| HTTP 方法 | 用途 | 返回值 |
-|----------|------|--------|
-| GET | 查询 | 实体或列表 `T` / `List<T>` |
-| POST | 创建 | 实体 `T` |
-| PUT | 更新 | `void` |
-| DELETE | 删除 | `void` |
-
-### Controller 返回类型规范
-
-所有 Controller 统一返回 `ResultUtil.Result<T>`，响应结构包含：
+所有 Controller 统一返回 `ResultUtil.Result<T>`，响应结构：
 
 | 字段 | 说明 |
 |------|------|
-| `code` | 业务状态码，成功为 `200` |
+| `code` | 业务状态码，成功 `200`；业务错误 `400`/`409`/`500`；鉴权错误由 Spring Security 返回 `403` |
 | `message` | 响应消息 |
-| `data` | 响应数据，删除、更新等无返回数据时为 `null` |
+| `data` | 响应数据，无数据时为 `null` |
 
 ### Service 方法命名规范
 
@@ -280,19 +273,22 @@ src/main/java/cn/edu/zut/softwareengineering/
 │   ├── ForumPostController.java
 │   ├── ForumCommentController.java
 │   ├── ForumLikeController.java
-│   └── AdminController.java
+│   ├── AdminController.java
+│   └── GlobalExceptionHandler.java
 ├── service/                 ← 业务逻辑层
 │   ├── UserService.java
 │   ├── ForumBoardService.java
 │   ├── ForumPostService.java
 │   ├── ForumCommentService.java
 │   ├── ForumLikeService.java
+│   ├── StatisticsService.java
 │   └── Impl/             ← Service实现类
 │       ├── UserServiceImpl.java
 │       ├── ForumBoardServiceImpl.java
 │       ├── ForumPostServiceImpl.java
 │       ├── ForumCommentServiceImpl.java
-│       └── ForumLikeServiceImpl.java
+│       ├── ForumLikeServiceImpl.java
+│       └── StatisticsServiceImpl.java
 ├── mapper/                  ← 数据访问层
 │   ├── UserMapper.java
 │   ├── ForumBoardMapper.java
@@ -307,12 +303,15 @@ src/main/java/cn/edu/zut/softwareengineering/
 │   └── ForumLike.java
 ├── config/                   ← 配置类
 │   ├── SecurityConfig.java
+│   ├── JwtAuthenticationFilter.java
 │   ├── JwtConfig.java
-│   └── MyBatisConfig.java
+│   ├── MyBatisConfig.java
+│   └── OpenApiConfig.java
 └── utils/                    ← 工具类
     ├── JwtUtil.java
     ├── PasswordEncoderUtil.java
-    └── ResultUtil.java
+    ├── ResultUtil.java
+    └── SecurityUtil.java
 ```
 
 ## 安全设计
@@ -355,14 +354,9 @@ src/main/java/cn/edu/zut/softwareengineering/
 
 ### 云服务器部署
 
-#### 服务器信息
+#### 1) 配置环境变量
 
-- **应用服务器**：122.51.87.179
-- **数据库服务器**：101.35.44.133
-
-#### 1) 配置数据库
-
-项目默认从环境变量读取数据库与 JWT 配置，避免把真实账号、密码和密钥提交到仓库。可参考 `.env.example` 准备本地配置：
+项目已改为环境变量驱动，避免真实账号、密码和密钥提交到仓库。参考 `.env.example` 准备配置：
 
 ```properties
 DB_URL=jdbc:mysql://localhost:3306/software_engineering_forum?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
@@ -373,67 +367,59 @@ JWT_EXPIRATION=86400000
 SERVER_PORT=8080
 ```
 
-`src/main/resources/application.properties` 已提供本地默认值。生产、演示或云服务器部署时，应通过环境变量覆盖以上配置。
-
 #### 2) 初始化数据库
 
-在数据库服务器（101.35.44.133）上执行 `SoftwareEngineering.sql` 创建数据库和表：
+执行 `SoftwareEngineering.sql` 创建数据库和表，可选执行 `demo_data.sql` 导入演示数据：
 
 ```bash
 mysql -u root -p < SoftwareEngineering.sql
+mysql -u root -p < demo_data.sql
 ```
 
-或在 MySQL 客户端中直接执行脚本文件。
-
-#### 3) 部署后端
-
-在应用服务器（122.51.87.179）上执行：
+#### 3) 构建与启动
 
 ```bash
-# 方式1：使用 Maven
-mvn spring-boot:run
-
-# 方式2：构建 JAR 并运行
 mvn clean package
 java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 ```
 
-后端启动成功后，访问 API 文档：
-- Knife4j UI：http://localhost:8080/doc.html
-- Swagger UI：http://localhost:8080/swagger-ui.html
+启动后访问 API 文档：Knife4j UI `http://localhost:8080/doc.html`
 
-#### 4) 部署前端（如适用）
+> 详细部署步骤和常见问题见 [后端部署说明.md](./后端部署说明.md)。
 
-在应用服务器（122.51.87.179）上执行：
+## 开发状态
 
-```bash
-cd forum-web
-npm install
-npm run build
-# 将dist目录部署到Web服务器
-```
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| 项目搭建 | Spring Boot + MyBatis + MySQL + Security | ✅ 完成 |
+| 用户认证 | 注册、登录、JWT 鉴权、BCrypt 加密 | ✅ 完成 |
+| 板块管理 | 浏览、CRUD、排序、启用/禁用 | ✅ 完成 |
+| 帖子管理 | 发布、列表、详情、编辑、删除、置顶、搜索 | ✅ 完成 |
+| 评论管理 | 发表、二级回复、树形展示、删除、计数同步 | ✅ 完成 |
+| 点赞管理 | 帖子/评论通用点赞、切换、状态、计数 | ✅ 完成 |
+| 后台管理 | 用户/板块/内容管理 + 统计概览 + 热门帖子 | ✅ 完成 |
+| 测试体系 | 60 个自动化测试，覆盖 Service/Controller/鉴权 | ✅ 完成 |
+| 文档收口 | README、数据库设计、API 清单、部署说明、测试报告 | ✅ 完成 |
+| 数据库联调 | 服务器 MySQL（101.35.44.133）真实环境联调通过 | ✅ 完成 |
+| 前端应用 | Vue 3 + Element Plus | ⏳ 待开发 |
 
-## 开发周期（课程设计建议）
+## 演示账号
 
-- **第 1 周**：项目搭建 + 用户模块
-- **第 2 周**：板块模块 + 帖子模块
-- **第 3 周**：评论模块 + 前端页面开发
-- **第 4 周**：后台管理 + 测试部署
+| 角色 | 用户名 | 密码 |
+|------|--------|------|
+| 管理员 | `admin` | `Admin_123` |
+| 普通用户 | `demo_user` | `User_123` |
 
-## 课程设计交付建议
-
-- 需求说明书（功能与角色权限）
-- 数据库设计文档（ER 图 + 表结构）
-- 接口文档（可使用 Swagger / Apifox）
-- 测试报告（功能测试 + 基础性能测试）
-- 项目演示视频或答辩 PPT
+导入 `demo_data.sql` 后可用以上账号测试完整功能。
 
 ## 相关文档
 
-- [数据库设计.md](./数据库设计.md) - 数据库表结构详细设计
+- [数据库设计.md](./数据库设计.md) - 数据库 ER 图与完整建表 SQL
 - [API接口清单.md](./API接口清单.md) - 当前后端接口清单与联调说明
-- [Service功能及修饰符对应表.md](./Service功能及修饰符对应表.md) - Service接口方法设计规范
-- [forum_like_migration.sql](./forum_like_migration.sql) - 点赞表结构升级脚本（数据迁移）
+- [后端部署说明.md](./后端部署说明.md) - 构建、部署与启动指南
+- [后端测试报告.md](./后端测试报告.md) - 自动化测试结果与质量结论
+- [SoftwareEngineering.sql](./SoftwareEngineering.sql) - 建库建表脚本
+- [demo_data.sql](./demo_data.sql) - 演示数据脚本
 
 ## License
 

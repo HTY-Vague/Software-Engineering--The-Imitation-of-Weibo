@@ -47,6 +47,14 @@
         WHERE comment_id = #{commentId}
     </update>
 
+    <update id="deleteCommentsByPostId" parameterType="java.lang.Integer">
+        UPDATE forum_comment
+        SET status = 0,
+            update_time = CURRENT_TIMESTAMP
+        WHERE post_id = #{postId}
+          AND status = 1
+    </update>
+
     <update id="incrementLikeCount" parameterType="java.lang.Integer">
         UPDATE forum_comment
         SET like_count = like_count + 1

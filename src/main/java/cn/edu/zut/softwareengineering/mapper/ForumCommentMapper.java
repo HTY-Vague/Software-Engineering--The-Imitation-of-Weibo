@@ -13,6 +13,8 @@ public interface ForumCommentMapper {
 
     void deleteComment(Integer commentId);
 
+    void deleteCommentsByPostId(Integer postId);
+
     void incrementLikeCount(Integer commentId);
 
     void decrementLikeCount(Integer commentId);

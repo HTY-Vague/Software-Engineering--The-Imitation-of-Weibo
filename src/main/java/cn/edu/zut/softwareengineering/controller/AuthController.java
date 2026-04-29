@@ -27,7 +27,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")// 用户登录
-    @Operation(summary = "用户登录", description = "校验账号密码，登录成功后返回 JWT 和用户信息")
+    @Operation(summary = "用户登录", description = "校验账号密码，登录成功后返回 JWT 和用户信息。请求体只需 username 和 password 字段，示例: {\"username\":\"admin\",\"password\":\"Admin_123\"}")
     public ResultUtil.Result<Map<String, Object>> login(@RequestBody User user) {
         User result = userService.login(user);
         String token = jwtUtil.generateToken(result.getUserId(), result.getUsername(), result.getRole());
