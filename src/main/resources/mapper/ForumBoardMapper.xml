@@ -86,4 +86,10 @@
         ORDER BY is_top DESC, create_time DESC
     </select>
 
+    <select id="countEnabledBoards" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM forum_board
+        WHERE status = 1
+    </select>
+
 </mapper>

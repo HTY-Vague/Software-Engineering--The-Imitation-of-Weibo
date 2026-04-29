@@ -45,4 +45,9 @@
           AND target_id = #{targetId}
     </delete>
 
+    <select id="countLikes" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM forum_like
+    </select>
+
 </mapper>

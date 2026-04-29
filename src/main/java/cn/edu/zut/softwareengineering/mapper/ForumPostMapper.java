@@ -30,4 +30,8 @@ public interface ForumPostMapper {
     void incrementLikeCount(Integer postId);
 
     void decrementLikeCount(Integer postId);
+
+    Integer countPosts();
+
+    List<ForumPost> getHotPosts(@Param("limit") Integer limit);
 }

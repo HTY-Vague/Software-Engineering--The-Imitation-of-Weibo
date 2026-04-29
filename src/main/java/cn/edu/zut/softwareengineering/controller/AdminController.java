@@ -5,6 +5,7 @@ import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
 import cn.edu.zut.softwareengineering.service.ForumPostService;
+import cn.edu.zut.softwareengineering.service.StatisticsService;
 import cn.edu.zut.softwareengineering.service.UserService;
 import cn.edu.zut.softwareengineering.utils.ResultUtil;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,9 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -27,15 +30,18 @@ public class AdminController {
     private final UserService userService;
     private final ForumPostService postService;
     private final ForumCommentService commentService;
+    private final StatisticsService statisticsService;
 
     public AdminController(UserService userService,
                            ForumBoardService boardService,
                            ForumPostService postService,
-                           ForumCommentService commentService) {
+                           ForumCommentService commentService,
+                           StatisticsService statisticsService) {
         this.userService = userService;
         this.boardService = boardService;
         this.postService = postService;
         this.commentService = commentService;
+        this.statisticsService = statisticsService;
     }
 
     @GetMapping("/users")// 获取所有用户
@@ -101,5 +107,15 @@ public class AdminController {
     public ResultUtil.Result<Void> deleteComment(@PathVariable Integer commentId) {
         commentService.deleteComment(commentId);
         return ResultUtil.success();
+    }
+
+    @GetMapping("/statistics/overview")
+    public ResultUtil.Result<Map<String, Object>> getStatisticsOverview() {
+        return ResultUtil.success(statisticsService.getOverview());
+    }
+
+    @GetMapping("/statistics/hot-posts")
+    public ResultUtil.Result<?> getHotPosts(@RequestParam(required = false) Integer limit) {
+        return ResultUtil.success(statisticsService.getHotPosts(limit));
     }
 }

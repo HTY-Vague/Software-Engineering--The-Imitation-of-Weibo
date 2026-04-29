@@ -93,4 +93,32 @@ class ForumCommentServiceImplTest {
         verify(forumLikeMapper).deleteByTarget(2, 3);
         verify(forumPostMapper).decrementCommentCount(10);
     }
+
+    @Test
+    @DisplayName("评论作者删除自己的评论时允许删除")
+    void deleteOwnCommentSuccess() {
+        ForumComment comment = new ForumComment();
+        comment.setCommentId(3);
+        comment.setPostId(10);
+        comment.setUserId(2);
+        when(forumCommentMapper.getCommentById(3)).thenReturn(comment);
+
+        forumCommentService.deleteOwnComment(3, 2);
+
+        verify(forumCommentMapper).deleteComment(3);
+        verify(forumLikeMapper).deleteByTarget(2, 3);
+        verify(forumPostMapper).decrementCommentCount(10);
+    }
+
+    @Test
+    @DisplayName("非作者删除评论时抛出状态异常")
+    void deleteOwnCommentByOtherUserThrowsException() {
+        ForumComment comment = new ForumComment();
+        comment.setCommentId(3);
+        comment.setPostId(10);
+        comment.setUserId(2);
+        when(forumCommentMapper.getCommentById(3)).thenReturn(comment);
+
+        assertThrows(IllegalStateException.class, () -> forumCommentService.deleteOwnComment(3, 4));
+    }
 }

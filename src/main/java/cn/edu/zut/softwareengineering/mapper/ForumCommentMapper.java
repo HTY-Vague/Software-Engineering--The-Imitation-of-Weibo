@@ -16,4 +16,6 @@ public interface ForumCommentMapper {
     void incrementLikeCount(Integer commentId);
 
     void decrementLikeCount(Integer commentId);
+
+    Integer countComments();
 }

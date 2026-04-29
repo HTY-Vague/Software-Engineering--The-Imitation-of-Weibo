@@ -19,4 +19,6 @@ public interface ForumLikeMapper {
 
     void deleteByTarget(@Param("targetType") Integer targetType,
                         @Param("targetId") Integer targetId);
+
+    Integer countLikes();
 }

@@ -5,6 +5,7 @@ import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
 import cn.edu.zut.softwareengineering.service.ForumLikeService;
 import cn.edu.zut.softwareengineering.service.ForumPostService;
+import cn.edu.zut.softwareengineering.service.StatisticsService;
 import cn.edu.zut.softwareengineering.service.UserService;
 import cn.edu.zut.softwareengineering.utils.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -55,6 +57,9 @@ class SecurityControllerTest {
 
     @MockBean
     private ForumLikeService forumLikeService;
+
+    @MockBean
+    private StatisticsService statisticsService;
 
     @Test
     @DisplayName("登录成功时返回统一响应和JWT")
@@ -119,5 +124,18 @@ class SecurityControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
+    }
+
+    @Test
+    @DisplayName("ADMIN令牌可访问后台统计概览")
+    void adminTokenCanAccessStatisticsOverview() throws Exception {
+        String token = jwtUtil.generateToken(1, "admin", "ADMIN");
+        when(statisticsService.getOverview()).thenReturn(Map.of("postCount", 20));
+
+        mockMvc.perform(get("/admin/statistics/overview")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.postCount").value(20));
     }
 }
