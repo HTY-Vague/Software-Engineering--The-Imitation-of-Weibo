@@ -1,15 +1,15 @@
 package cn.edu.zut.softwareengineering.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import org.springframework.http.ResponseEntity;
-
 import cn.edu.zut.softwareengineering.entity.User;
+import cn.edu.zut.softwareengineering.service.ForumPostService;
 import cn.edu.zut.softwareengineering.service.UserService;
+import cn.edu.zut.softwareengineering.utils.ResultUtil;
+import cn.edu.zut.softwareengineering.utils.SecurityUtil;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 
 
@@ -18,52 +18,52 @@ import cn.edu.zut.softwareengineering.service.UserService;
 public class UserController {
 
     private final UserService userService;
+    private final ForumPostService forumPostService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, ForumPostService forumPostService) {
 
         this.userService = userService;
+        this.forumPostService = forumPostService;
     }
 
     @PostMapping("/profile")// 获取用户信息
-    public ResponseEntity<User> getProfile(@RequestBody User user) {
-        Integer userId = user != null ? user.getUserId() : null;
-        return ResponseEntity.ok(userService.getProfile(userId));
+    public ResultUtil.Result<User> getProfile() {
+        return ResultUtil.success(userService.getProfile(SecurityUtil.getCurrentUserId()));
 
     }
 
 
     @PostMapping("/update/profile")// 更新用户信息
-    public void updateProfile(@RequestBody User user) {
-
+    public ResultUtil.Result<Void> updateProfile(@RequestBody User user) {
+        user.setUserId(SecurityUtil.getCurrentUserId());
         userService.updateProfile(user);
+        return ResultUtil.success();
     }
 
     @PostMapping("/update/password")// 更新密码
-    public void updatePassword(@RequestBody User user,
-                               @RequestParam String oldPassword,
-                               @RequestParam String newPassword) {
-        Integer userId = user != null ? user.getUserId() : null;
-        userService.updatePassword(userId, oldPassword, newPassword);
+    public ResultUtil.Result<Void> updatePassword(@RequestParam String oldPassword,
+                                                  @RequestParam String newPassword) {
+        userService.updatePassword(SecurityUtil.getCurrentUserId(), oldPassword, newPassword);
+        return ResultUtil.success();
 
     }
 
     @PostMapping("/posts")// 获取用户帖子
-    public ResponseEntity<?> getPosts(@RequestBody User user) {
-        Integer userId = user != null ? user.getUserId() : null;
-        return ResponseEntity.ok(userService.getPosts(userId));
+    public ResultUtil.Result<?> getPosts() {
+        return ResultUtil.success(userService.getPosts(SecurityUtil.getCurrentUserId()));
 
     }
 
     @PostMapping("/delete/post")// 删除用户帖子
-    public void deletePost(@RequestParam Integer postId) {
-        userService.deletePost(postId);
+    public ResultUtil.Result<Void> deletePost(@RequestParam Integer postId) {
+        forumPostService.deleteOwnPost(postId, SecurityUtil.getCurrentUserId());
+        return ResultUtil.success();
 
     }
 
     @PostMapping("/comments")// 获取用户评论
-    public ResponseEntity<?> getComments(@RequestBody User user) {
-        Integer userId = user != null ? user.getUserId() : null;
-        return ResponseEntity.ok(userService.getComments(userId));
+    public ResultUtil.Result<?> getComments() {
+        return ResultUtil.success(userService.getComments(SecurityUtil.getCurrentUserId()));
 
     }
 }

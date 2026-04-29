@@ -6,17 +6,19 @@ import cn.edu.zut.softwareengineering.entity.ForumComment;
 
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface UserMapper {
     User login(User user);
-    User register(User user);
+    void register(User user);
     void logout(Integer userId);
     User getUserById(Integer userId);
+    User getUserByUsername(String username);
     void updateProfile(User user);
-    void updatePassword(Integer userId, String oldPassword, String newPassword);
+    void updatePassword(@Param("userId") Integer userId, @Param("newPassword") String newPassword);
     List<ForumPost> getUserPosts(Integer userId);
     List<ForumComment> getUserComments(Integer userId);
     List<User> getAllUsers();
-    void updateUserStatus(Integer userId, Integer status);
+    void updateUserStatus(@Param("userId") Integer userId, @Param("status") Integer status);
 }

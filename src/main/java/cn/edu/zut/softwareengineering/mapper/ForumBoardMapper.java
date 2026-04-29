@@ -4,6 +4,7 @@ import java.util.List;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
 import cn.edu.zut.softwareengineering.entity.ForumPost;
+import org.apache.ibatis.annotations.Param;
 
 public interface ForumBoardMapper {
 
@@ -13,7 +14,7 @@ public interface ForumBoardMapper {
 
     public void updateBoard(ForumBoard forumBoard);
 
-    public void updateBoardStatus(Integer forumId, Integer status);
+    public void updateBoardStatus(@Param("boardId") Integer boardId, @Param("status") Integer status);
 
     public void sortBoards(List<Long> boardIds);
 

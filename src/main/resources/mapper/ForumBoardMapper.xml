@@ -14,4 +14,76 @@
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
+    <resultMap id="PostResultMap" type="cn.edu.zut.softwareengineering.entity.ForumPost">
+        <id column="post_id" property="postId"/>
+        <result column="board_id" property="boardId"/>
+        <result column="author_id" property="authorId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="is_top" property="isTop"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <select id="getBoards" resultMap="BaseResultMap">
+        SELECT board_id, board_name, description, sort_num, status, create_time, update_time
+        FROM forum_board
+        ORDER BY sort_num ASC, create_time ASC
+    </select>
+
+    <insert id="addBoard" parameterType="cn.edu.zut.softwareengineering.entity.ForumBoard" useGeneratedKeys="true" keyProperty="boardId">
+        INSERT INTO forum_board (board_name, description, sort_num, status)
+        VALUES (#{boardName}, #{description}, COALESCE(#{sortNum}, 0), COALESCE(#{status}, 1))
+    </insert>
+
+    <update id="updateBoard" parameterType="cn.edu.zut.softwareengineering.entity.ForumBoard">
+        UPDATE forum_board
+        <set>
+            <if test="boardName != null and boardName != ''">board_name = #{boardName},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sortNum != null">sort_num = #{sortNum},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE board_id = #{boardId}
+    </update>
+
+    <update id="updateBoardStatus">
+        UPDATE forum_board
+        SET status = #{status},
+            update_time = CURRENT_TIMESTAMP
+        WHERE board_id = #{boardId}
+    </update>
+
+    <update id="sortBoards">
+        UPDATE forum_board
+        SET sort_num = CASE board_id
+        <foreach collection="list" item="boardId" index="index">
+            WHEN #{boardId} THEN #{index}
+        </foreach>
+        END,
+        update_time = CURRENT_TIMESTAMP
+        WHERE board_id IN
+        <foreach collection="list" item="boardId" open="(" separator="," close=")">
+            #{boardId}
+        </foreach>
+    </update>
+
+    <delete id="deleteBoard" parameterType="java.lang.Integer">
+        DELETE FROM forum_board
+        WHERE board_id = #{boardId}
+    </delete>
+
+    <select id="getBoardPosts" parameterType="java.lang.Integer" resultMap="PostResultMap">
+        SELECT post_id, board_id, author_id, title, content, view_count, like_count, comment_count, is_top, status, create_time, update_time
+        FROM forum_post
+        WHERE board_id = #{boardId}
+          AND status = 1
+        ORDER BY is_top DESC, create_time DESC
+    </select>
+
 </mapper>

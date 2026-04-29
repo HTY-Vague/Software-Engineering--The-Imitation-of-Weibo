@@ -1,20 +1,20 @@
 package cn.edu.zut.softwareengineering.controller;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import org.springframework.http.ResponseEntity;
-
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
 import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
+import cn.edu.zut.softwareengineering.service.ForumCommentService;
+import cn.edu.zut.softwareengineering.service.ForumPostService;
 import cn.edu.zut.softwareengineering.service.UserService;
+import cn.edu.zut.softwareengineering.utils.ResultUtil;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -25,50 +25,81 @@ public class AdminController {
 
     private final ForumBoardService boardService;
     private final UserService userService;
+    private final ForumPostService postService;
+    private final ForumCommentService commentService;
 
-    public AdminController(UserService userService, ForumBoardService boardService) {
+    public AdminController(UserService userService,
+                           ForumBoardService boardService,
+                           ForumPostService postService,
+                           ForumCommentService commentService) {
         this.userService = userService;
         this.boardService = boardService;
+        this.postService = postService;
+        this.commentService = commentService;
     }
 
     @GetMapping("/users")// 获取所有用户
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResultUtil.Result<List<User>> getAllUsers() {
+        return ResultUtil.success(userService.getAllUsers());
     }
 
     @PutMapping("/users/{userId}/status")// 启用/禁用用户
-    public void updateUserStatus(@PathVariable Integer userId, @RequestBody Integer status) {
+    public ResultUtil.Result<Void> updateUserStatus(@PathVariable Integer userId, @RequestBody Integer status) {
         userService.updateUserStatus(userId, status);
+        return ResultUtil.success();
     }
 
     @GetMapping("/forums")// 获取所有论坛板块
-    public ResponseEntity<List<ForumBoard>> getBoards() {
-        return ResponseEntity.ok(boardService.getBoards());
+    public ResultUtil.Result<List<ForumBoard>> getBoards() {
+        return ResultUtil.success(boardService.getBoards());
     }
 
     @PostMapping("/forums")// 添加论坛板块
-    public ResponseEntity<ForumBoard> addBoard(@RequestBody ForumBoard forumBoard) {
+    public ResultUtil.Result<ForumBoard> addBoard(@RequestBody ForumBoard forumBoard) {
         boardService.addBoard(forumBoard);
-        return ResponseEntity.ok(forumBoard);
+        return ResultUtil.success(forumBoard);
     }
 
     @PutMapping("/forums/{forumId}")// 更新论坛板块
-    public void updateForum(@PathVariable Integer forumId, @RequestBody ForumBoard forumBoard) {
+    public ResultUtil.Result<Void> updateForum(@PathVariable Integer forumId, @RequestBody ForumBoard forumBoard) {
+        forumBoard.setBoardId(forumId);
         boardService.updateBoard(forumBoard);
+        return ResultUtil.success();
     }
 
     @PutMapping("/forums/{forumId}/status")// 启用/禁用论坛板块
-    public void updateForumStatus(@PathVariable Integer forumId, @RequestBody Integer status) {
+    public ResultUtil.Result<Void> updateForumStatus(@PathVariable Integer forumId, @RequestBody Integer status) {
         boardService.updateBoardStatus(forumId, status);
+        return ResultUtil.success();
     }
 
     @PutMapping("/forums/sort")// 排序论坛板块
-    public void sortForums() {
-        boardService.sortBoards(null);
+    public ResultUtil.Result<Void> sortForums(@RequestBody List<Long> boardIds) {
+        boardService.sortBoards(boardIds);
+        return ResultUtil.success();
     }
 
     @DeleteMapping("/forums/{forumId}")// 删除论坛板块
-    public void deleteForum(@PathVariable Integer forumId) {
+    public ResultUtil.Result<Void> deleteForum(@PathVariable Integer forumId) {
         boardService.deleteBoard(forumId);
+        return ResultUtil.success();
+    }
+
+    @PutMapping("/posts/{postId}/top")
+    public ResultUtil.Result<Void> updatePostTop(@PathVariable Integer postId, @RequestBody Integer isTop) {
+        postService.toggleTop(postId, isTop);
+        return ResultUtil.success();
+    }
+
+    @DeleteMapping("/posts/{postId}")
+    public ResultUtil.Result<Void> deletePost(@PathVariable Integer postId) {
+        postService.deletePost(postId);
+        return ResultUtil.success();
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ResultUtil.Result<Void> deleteComment(@PathVariable Integer commentId) {
+        commentService.deleteComment(commentId);
+        return ResultUtil.success();
     }
 }
