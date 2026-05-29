@@ -1,6 +1,41 @@
+<script setup>
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+</script>
+
 <template>
-  <section class="page">
-    <h1>编辑帖子</h1>
-    <p>修改帖子内容并保存。</p>
-  </section>
+  <main class="page">
+    <section class="card">
+      <h1>Edit Post</h1>
+      <p>Post ID: {{ route.params.postId }}</p>
+      <p>TODO: Connect /posts/update</p>
+    </section>
+  </main>
 </template>
+
+<style scoped>
+.page {
+  padding: 48px 24px;
+}
+
+.card {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 28px;
+}
+
+p {
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+</style>

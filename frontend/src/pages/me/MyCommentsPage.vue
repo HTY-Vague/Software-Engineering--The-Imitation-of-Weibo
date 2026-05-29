@@ -1,6 +1,37 @@
+<script setup>
+</script>
+
 <template>
-  <section class="page">
-    <h1>我的评论</h1>
-    <p>查看自己发表的评论。</p>
-  </section>
+  <main class="page">
+    <section class="card">
+      <h1>My Comments</h1>
+      <p>TODO: Connect /user/comments</p>
+    </section>
+  </main>
 </template>
+
+<style scoped>
+.page {
+  padding: 48px 24px;
+}
+
+.card {
+  max-width: 860px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: var(--shadow);
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 28px;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+}
+</style>
