@@ -71,6 +71,13 @@ public class ForumCommentServiceImpl implements ForumCommentService {
     }
 
     @Override
+    public List<ForumComment> getAllComments() {
+        List<ForumComment> comments = forumCommentMapper.getAllComments();
+        comments.forEach(comment -> comment.setChildren(new ArrayList<>()));
+        return comments;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteComment(Integer commentId) {
         if (commentId == null) {

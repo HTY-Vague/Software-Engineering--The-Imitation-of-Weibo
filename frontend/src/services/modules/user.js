@@ -6,8 +6,8 @@ export const updateProfile = (payload) => http.post('/user/update/profile', payl
 
 export const updatePassword = (payload) => http.post('/user/update/password', payload)
 
-export const getMyPosts = (payload) => http.post('/user/posts', payload)
+export const getMyPosts = () => http.post('/user/posts')
 
-export const deleteMyPost = (payload) => http.post('/user/delete/post', payload)
+export const deleteMyPost = (params) => http.post('/user/delete/post', null, { params })
 
-export const getMyComments = (payload) => http.post('/user/comments', payload)
+export const getMyComments = () => http.post('/user/comments')

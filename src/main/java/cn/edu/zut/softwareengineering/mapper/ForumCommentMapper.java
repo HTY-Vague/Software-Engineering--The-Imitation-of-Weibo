@@ -11,6 +11,8 @@ public interface ForumCommentMapper {
 
     List<ForumComment> getCommentsByPostId(Integer postId);
 
+    List<ForumComment> getAllComments();
+
     void deleteComment(Integer commentId);
 
     void deleteCommentsByPostId(Integer postId);
