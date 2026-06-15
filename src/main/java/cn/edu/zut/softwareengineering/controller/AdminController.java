@@ -1,6 +1,7 @@
 package cn.edu.zut.softwareengineering.controller;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
+import cn.edu.zut.softwareengineering.entity.ForumComment;
 import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
@@ -121,6 +122,12 @@ public class AdminController {
     public ResultUtil.Result<Void> deleteComment(@PathVariable Integer commentId) {
         commentService.deleteComment(commentId);
         return ResultUtil.success();
+    }
+
+    @GetMapping("/comments")
+    @Operation(summary = "获取所有评论")
+    public ResultUtil.Result<List<ForumComment>> getAllComments() {
+        return ResultUtil.success(commentService.getAllComments());
     }
 
     @GetMapping("/statistics/overview")

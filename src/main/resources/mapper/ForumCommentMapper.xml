@@ -40,6 +40,12 @@
           create_time ASC
     </select>
 
+        <select id="getAllComments" resultMap="BaseResultMap">
+                SELECT comment_id, post_id, user_id, parent_comment_id, reply_user_id, content, like_count, status, create_time, update_time
+                FROM forum_comment
+                ORDER BY create_time DESC
+        </select>
+
     <update id="deleteComment" parameterType="java.lang.Integer">
         UPDATE forum_comment
         SET status = 0,

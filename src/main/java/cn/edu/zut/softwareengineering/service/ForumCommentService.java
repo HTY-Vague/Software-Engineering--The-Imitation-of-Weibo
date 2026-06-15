@@ -9,6 +9,8 @@ public interface ForumCommentService {
 
     List<ForumComment> getComments(Integer postId);
 
+    List<ForumComment> getAllComments();
+
     void deleteComment(Integer commentId);
 
     void deleteOwnComment(Integer commentId, Integer operatorId);
