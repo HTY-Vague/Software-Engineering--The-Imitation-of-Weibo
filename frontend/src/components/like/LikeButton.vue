@@ -27,14 +27,16 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 const loadState = async () => {
   loading.value = true
   try {
-    const [status, total] = await Promise.all([
-      getLikeStatus({ targetType: props.targetType, targetId: Number(props.targetId) }),
-      getLikeCount({ targetType: props.targetType, targetId: Number(props.targetId) }),
-    ])
+    const target = { targetType: props.targetType, targetId: Number(props.targetId) }
+    const countPromise = getLikeCount(target)
+    const statusPromise = isAuthenticated.value ? getLikeStatus(target) : Promise.resolve(false)
+    const [status, total] = await Promise.all([statusPromise, countPromise])
     liked.value = Boolean(status)
     count.value = Number(total) || 0
   } catch (error) {
-    ElMessage.error(error?.message || '点赞状态加载失败')
+    if (isAuthenticated.value) {
+      ElMessage.error(error?.message || '点赞状态加载失败')
+    }
   } finally {
     loading.value = false
   }
