@@ -2,10 +2,10 @@ import http from '../http'
 
 export const createPost = (payload) => http.post('/posts/create', payload)
 
-export const getPostDetail = (payload) => http.post('/posts/detail', payload)
+export const getPostDetail = (params) => http.post('/posts/detail', null, { params })
 
-export const listPosts = (payload) => http.post('/posts/list', payload)
+export const listPosts = (params) => http.post('/posts/list', null, { params })
 
 export const updatePost = (payload) => http.post('/posts/update', payload)
 
-export const deletePost = (payload) => http.post('/posts/delete', payload)
+export const deletePost = (params) => http.post('/posts/delete', null, { params })
