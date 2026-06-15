@@ -3,6 +3,15 @@ import { defineStore } from 'pinia'
 const TOKEN_KEY = 'token'
 const USER_KEY = 'user'
 
+const sanitizeUser = (user) => {
+  if (!user) {
+    return null
+  }
+
+  const { password, ...safeUser } = user
+  return safeUser
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: '',
@@ -27,7 +36,7 @@ export const useAuthStore = defineStore('auth', {
     },
     setAuth(payload) {
       this.token = payload?.token || ''
-      this.user = payload?.user || null
+      this.user = sanitizeUser(payload?.user)
       localStorage.setItem(TOKEN_KEY, this.token)
       if (this.user) {
         localStorage.setItem(USER_KEY, JSON.stringify(this.user))

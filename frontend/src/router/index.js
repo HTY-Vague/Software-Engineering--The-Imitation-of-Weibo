@@ -104,6 +104,10 @@ router.beforeEach((to) => {
   const authStore = useAuthStore(pinia)
   authStore.hydrate()
 
+  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+    return { path: '/' }
+  }
+
   if (to.meta?.requiresAuth && !authStore.isAuthenticated) {
     return {
       path: '/auth/login',
