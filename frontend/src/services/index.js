@@ -1,0 +1,8 @@
+export * as authApi from './modules/auth'
+export * as userApi from './modules/user'
+export * as forumApi from './modules/forum'
+export * as postApi from './modules/post'
+export * as commentApi from './modules/comment'
+export * as likeApi from './modules/like'
+export * as adminApi from './modules/admin'
+export * as statsApi from './modules/statistics'
