@@ -149,8 +149,45 @@
 | 帖子置顶 | PUT | `/admin/posts/{postId}/top` | 请求体传 `0` 或 `1` |
 | 删除帖子 | DELETE | `/admin/posts/{postId}` | 管理员删除违规帖子 |
 | 删除评论 | DELETE | `/admin/comments/{commentId}` | 管理员删除违规评论 |
-| 统计概览 | GET | `/admin/statistics/overview` | 用户、板块、帖子、评论、点赞数量 |
-| 热门帖子 | GET | `/admin/statistics/hot-posts` | 支持参数：`limit`，默认 10，最大 50 |
+| 统计概览 | GET | `/admin/statistics/overview` | 用户、板块、帖子、评论、点赞数量。数据来源：Spark 跑批写入的 `stat_overview` 表 |
+| 热门帖子 | GET | `/admin/statistics/hot-posts` | 支持参数：`limit`，默认 10，最大 50。数据来源：Spark 跑批写入的 `stat_hot_post` 表，按热度分排序 |
+| 板块活跃度 | GET | `/admin/statistics/board-active` | 板块活跃度排行。数据来源：Spark 跑批写入的 `stat_board_active` 表 |
+| 用户活跃度 | GET | `/admin/statistics/active-users` | 支持参数：`limit`，默认 10，最大 50。数据来源：Spark 跑批写入的 `stat_active_user` 表 |
+| 内容质量分析 | GET | `/admin/statistics/content-quality` | 支持参数：`qualityType`，可选值 `HIGH_LIKE_LOW_COMMENT`（高赞低评论）、`HIGH_COMMENT_LOW_LIKE`（高评论低赞）、`HOT`（综合热门），不传返回全部。数据来源：Spark 跑批写入的 `stat_content_quality` 表 |
+| 每日趋势 | GET | `/admin/statistics/daily-trend` | 支持参数：`days`，默认 7，最大 90。数据来源：Spark 跑批写入的 `stat_daily_trend` 表 |
+
+> 上述统计接口的数据由服务器上的 Spark 离线分析程序（`/opt/forum-stats.jar`）每日凌晨 03:00 通过 cron 跑批写入 `stat_*` 表，Spring Boot 端只读展示。统计数据容忍日级延迟，不需要实时。详见 `后端文档/后端部署说明.md` 中 Spark 分析部署章节。
+
+### 热门帖子响应示例
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": [
+    {
+      "rankNum": 1,
+      "postId": 4,
+      "boardId": 2,
+      "authorId": 1,
+      "title": "校园周边美食推荐",
+      "viewCount": 890,
+      "likeCount": 35,
+      "commentCount": 20,
+      "hotScore": 219.0,
+      "updateTime": "2026-06-23T20:50:17"
+    }
+  ]
+}
+```
+
+### 内容质量分析 qualityType 取值
+
+| 值 | 说明 | 判定规则 |
+|----|------|---------|
+| `HIGH_LIKE_LOW_COMMENT` | 高赞低评论（优质干货） | 点赞数 ≥ 10 且 评论数 ≤ 5 |
+| `HIGH_COMMENT_LOW_LIKE` | 高评论低赞（争议/讨论帖） | 评论数 ≥ 8 且 点赞数 ≤ 3 |
+| `HOT` | 综合热门 | 热度分 ≥ 40（热度 = 点赞×2 + 评论×3 + 浏览×0.1） |
 
 ## 九、文档接口
 

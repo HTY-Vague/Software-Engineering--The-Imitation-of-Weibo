@@ -2,6 +2,7 @@ package cn.edu.zut.softwareengineering.controller;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
 import cn.edu.zut.softwareengineering.entity.ForumPost;
+import cn.edu.zut.softwareengineering.entity.StatHotPost;
 import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
@@ -221,9 +222,11 @@ class AdminControllerTest {
     @Test
     @DisplayName("管理员获取热门帖子，支持自定义limit")
     void adminGetHotPosts() throws Exception {
-        ForumPost post = new ForumPost();
-        post.setPostId(10);
+        StatHotPost post = new StatHotPost();
+        post.setRankNum(1);
+        post.setPostId(10L);
         post.setTitle("热门");
+        post.setHotScore(99.5);
         when(statisticsService.getHotPosts(5)).thenReturn(List.of(post));
 
         mockMvc.perform(get("/admin/statistics/hot-posts")
@@ -231,7 +234,8 @@ class AdminControllerTest {
                         .param("limit", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data[0].postId").value(10));
+                .andExpect(jsonPath("$.data[0].postId").value(10))
+                .andExpect(jsonPath("$.data[0].hotScore").value(99.5));
 
         verify(statisticsService).getHotPosts(5);
     }
