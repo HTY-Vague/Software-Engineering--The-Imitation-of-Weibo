@@ -2,6 +2,11 @@ package cn.edu.zut.softwareengineering.controller;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
 import cn.edu.zut.softwareengineering.entity.ForumComment;
+import cn.edu.zut.softwareengineering.entity.StatActiveUser;
+import cn.edu.zut.softwareengineering.entity.StatBoardActive;
+import cn.edu.zut.softwareengineering.entity.StatContentQuality;
+import cn.edu.zut.softwareengineering.entity.StatDailyTrend;
+import cn.edu.zut.softwareengineering.entity.StatHotPost;
 import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
@@ -137,8 +142,32 @@ public class AdminController {
     }
 
     @GetMapping("/statistics/hot-posts")
-    @Operation(summary = "获取热门帖子")
-    public ResultUtil.Result<?> getHotPosts(@RequestParam(required = false) Integer limit) {
+    @Operation(summary = "获取热门帖子", description = "数据来源：Spark 跑批写入的 stat_hot_post 表，按热度分排序")
+    public ResultUtil.Result<List<StatHotPost>> getHotPosts(@RequestParam(required = false) Integer limit) {
         return ResultUtil.success(statisticsService.getHotPosts(limit));
+    }
+
+    @GetMapping("/statistics/board-active")
+    @Operation(summary = "获取板块活跃度排行", description = "数据来源：Spark 跑批写入的 stat_board_active 表，按活跃度排序")
+    public ResultUtil.Result<List<StatBoardActive>> getBoardActive() {
+        return ResultUtil.success(statisticsService.getBoardActive());
+    }
+
+    @GetMapping("/statistics/active-users")
+    @Operation(summary = "获取用户活跃度排行", description = "数据来源：Spark 跑批写入的 stat_active_user 表，按活跃度排序")
+    public ResultUtil.Result<List<StatActiveUser>> getActiveUsers(@RequestParam(required = false) Integer limit) {
+        return ResultUtil.success(statisticsService.getActiveUsers(limit));
+    }
+
+    @GetMapping("/statistics/content-quality")
+    @Operation(summary = "获取内容质量分析", description = "数据来源：Spark 跑批写入的 stat_content_quality 表。qualityType 可选值：HIGH_LIKE_LOW_COMMENT（高赞低评论）、HIGH_COMMENT_LOW_LIKE（高评论低赞）、HOT（综合热门），不传则返回全部")
+    public ResultUtil.Result<List<StatContentQuality>> getContentQuality(@RequestParam(required = false) String qualityType) {
+        return ResultUtil.success(statisticsService.getContentQuality(qualityType));
+    }
+
+    @GetMapping("/statistics/daily-trend")
+    @Operation(summary = "获取每日趋势", description = "数据来源：Spark 跑批写入的 stat_daily_trend 表。days 为查询最近天数，默认 7，最大 90")
+    public ResultUtil.Result<List<StatDailyTrend>> getDailyTrend(@RequestParam(required = false) Integer days) {
+        return ResultUtil.success(statisticsService.getDailyTrend(days));
     }
 }

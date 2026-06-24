@@ -99,7 +99,11 @@
 - 板块管理（新增、编辑、删除、启用/禁用、排序）
 - 内容管理（帖子置顶、帖子/评论删除）
 - 统计概览（用户/板块/帖子/评论/点赞总数）
-- 热门帖子（按浏览量排序）
+- 热门帖子（按热度分排序，Spark 离线分析）
+- 板块活跃度排行（Spark 离线分析）
+- 用户活跃度排行（Spark 离线分析）
+- 内容质量分析（高赞低评论/高评论低赞/综合热门，Spark 离线分析）
+- 每日趋势（用户/帖子/评论/点赞新增量，Spark 离线分析）
 
 ## 技术架构
 
@@ -110,7 +114,10 @@
     ↓
 REST API（Spring Boot）
     ↓
-MySQL 数据库
+MySQL 数据库（业务表）
+    ↑ 只读
+统计表 stat_*  ←—— Spark 离线分析（独立进程，每日跑批）
+    ↑ JDBC 读取业务表聚合
 ```
 
 ### 架构说明
@@ -118,6 +125,7 @@ MySQL 数据库
 - 前端负责页面渲染、交互逻辑与状态管理
 - 后端提供统一 RESTful API、权限认证与业务处理
 - 数据层负责结构化存储（用户、板块、帖子、评论等）
+- 统计分析层由 Spark 独立进程每日跑批，聚合业务表数据写入统计表，Spring Boot 只读展示
 
 ## 技术栈
 
@@ -134,6 +142,7 @@ MySQL 数据库
 - **工具库**：Hutool 5.8.27
 - **参数校验**：Validation（Spring Boot 内置）
 - **构建工具**：Maven 3.8+
+- **离线分析**：Spark 4.1.2（Java 21，独立进程跑批写统计表）
 
 ### 前端
 
@@ -294,13 +303,15 @@ src/main/java/cn/edu/zut/softwareengineering/
 │   ├── ForumBoardMapper.java
 │   ├── ForumPostMapper.java
 │   ├── ForumCommentMapper.java
-│   └── ForumLikeMapper.java
+│   ├── ForumLikeMapper.java
+│   └── StatMapper.java         ← 统计表只读 Mapper（Spark 跑批写入）
 ├── entity/                   ← 实体类
 │   ├── User.java
 │   ├── ForumBoard.java
 │   ├── ForumPost.java
 │   ├── ForumComment.java
-│   └── ForumLike.java
+│   ├── ForumLike.java
+│   └── Stat*.java              ← 6 个统计实体（StatOverview/StatHotPost/...）
 ├── config/                   ← 配置类
 │   ├── SecurityConfig.java
 │   ├── JwtAuthenticationFilter.java
@@ -398,7 +409,8 @@ java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 | 评论管理 | 发表、二级回复、树形展示、删除、计数同步 | ✅ 完成 |
 | 点赞管理 | 帖子/评论通用点赞、切换、状态、计数 | ✅ 完成 |
 | 后台管理 | 用户/板块/内容管理 + 统计概览 + 热门帖子 | ✅ 完成 |
-| 测试体系 | 60 个自动化测试，覆盖 Service/Controller/鉴权 | ✅ 完成 |
+| Spark 分析 | 离线跑批写统计表：热门/板块活跃度/用户活跃度/内容质量/每日趋势 | ✅ 完成 |
+| 测试体系 | 65 个自动化测试，覆盖 Service/Controller/鉴权/统计 | ✅ 完成 |
 | 文档收口 | README、数据库设计、API 清单、部署说明、测试报告 | ✅ 完成 |
 | 数据库联调 | 服务器 MySQL（101.35.44.133）真实环境联调通过 | ✅ 完成 |
 | 前端应用 | Vue 3 + Element Plus | ⏳ 待开发 |

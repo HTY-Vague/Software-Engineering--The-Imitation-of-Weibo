@@ -82,6 +82,8 @@ src/main/java/cn/edu/zut/softwareengineering/
 - `src/main/resources/mapper/*.xml`：Mapper SQL，项目约定 SQL 写在 XML 中。
 - `src/test/java/**`：自动化测试，包括 Service、Controller、安全、OpenAPI 和数据库联调入口。
 - `target/`：Maven 构建产物，不应手动维护，也不应作为源码依据。
+- `spark-stats/`：Spark 离线分析独立工程（独立 pom + Java 21），编译成 jar 在服务器上通过 `spark-submit` 跑批写统计表，不依赖主工程运行时。
+- `spark_stats.sql` / `spark_demo_data.sql`：统计表建表脚本和演示数据脚本。
 
 ## 常用命令
 
@@ -139,8 +141,10 @@ mvn -Dtest=DatabaseIntegrationIT test
 | 评论管理 | 完成 | 一级评论、二级回复、树形展示、删除、计数同步已具备 |
 | 点赞管理 | 完成 | 帖子/评论通用点赞、取消点赞、状态查询、计数同步已具备 |
 | 后台管理 | 完成 | 用户、板块、帖子、评论管理，统计概览和热门帖子已具备 |
-| 自动化测试 | 完成 | 常规回归记录为 60 个测试通过，失败 0、错误 0、跳过 0 |
+| Spark 分析 | 完成 | 独立进程 `spark-stats` 每日跑批写 6 张统计表，统计接口改读统计表展示 |
+| 自动化测试 | 完成 | 常规回归记录为 65 个测试通过，失败 0、错误 0、跳过 0 |
 | 数据库联调 | 已有入口 | `DatabaseIntegrationIT` 可验证真实 MySQL 和核心 Mapper SQL |
+| Spark 跑批 | 已部署验证 | 服务器上 Spark 4.1.2 + Java 21 跑批通过，cron 每日 03:00 |
 | 文档 | 基本完成 | README、API 清单、部署说明、测试报告、数据库设计等已整理 |
 | 前端应用 | 待开发 | README 中规划为 Vue 3 + Element Plus，目前仓库以后端为主 |
 
@@ -175,12 +179,14 @@ mvn -Dtest=DatabaseIntegrationIT test
 - `forum_post`：帖子表
 - `forum_comment`：评论表
 - `forum_like`：点赞表，使用 `target_type + target_id + user_id` 的通用点赞模型
+- `stat_*`（6 张）：Spark 跑批写入的统计表（`stat_overview`/`stat_hot_post`/`stat_board_active`/`stat_active_user`/`stat_content_quality`/`stat_daily_trend`），由 `StatMapper` 只读，写入由独立 Spark 进程负责
 
 演示数据：
 
 - 导入 `demo_data.sql` 后可使用演示账号。
 - 管理员：`admin` / `Admin_123`
 - 普通用户：`demo_user` / `User_123`
+- Spark 分析演示数据：`spark_demo_data.sql`，包含 3 板块 / 8 帖子 / 75 评论 / 23 点赞，用于验证跑批结果。
 
 ## 开发约定
 
