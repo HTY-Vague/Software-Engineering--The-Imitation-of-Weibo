@@ -7,6 +7,7 @@ import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
 import cn.edu.zut.softwareengineering.service.ForumPostService;
+import cn.edu.zut.softwareengineering.service.SparkStatsService;
 import cn.edu.zut.softwareengineering.service.StatisticsService;
 import cn.edu.zut.softwareengineering.service.UserService;
 import cn.edu.zut.softwareengineering.utils.JwtUtil;
@@ -60,6 +61,9 @@ class AdminControllerTest {
 
     @MockBean
     private StatisticsService statisticsService;
+
+    @MockBean
+    private SparkStatsService sparkStatsService;
 
     // ---- users ----
 
@@ -253,6 +257,36 @@ class AdminControllerTest {
     void unauthenticatedAccessToAdminIsBlocked() throws Exception {
         mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("管理员触发 Spark 跑批返回异步状态")
+    void adminTriggerSparkRun() throws Exception {
+        when(sparkStatsService.triggerRun()).thenReturn(Map.of("state", "RUNNING", "taskId", "spark-1"));
+
+        mockMvc.perform(post("/admin/statistics/trigger-spark")
+                        .header("Authorization", adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.state").value("RUNNING"))
+                .andExpect(jsonPath("$.data.taskId").value("spark-1"));
+
+        verify(sparkStatsService).triggerRun();
+    }
+
+    @Test
+    @DisplayName("管理员查询 Spark 跑批状态")
+    void adminGetSparkStatus() throws Exception {
+        when(sparkStatsService.getStatus()).thenReturn(Map.of("state", "SUCCESS", "durationMillis", 8000));
+
+        mockMvc.perform(get("/admin/statistics/spark-status")
+                        .header("Authorization", adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.state").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.durationMillis").value(8000));
+
+        verify(sparkStatsService).getStatus();
     }
 
     private String adminToken() {

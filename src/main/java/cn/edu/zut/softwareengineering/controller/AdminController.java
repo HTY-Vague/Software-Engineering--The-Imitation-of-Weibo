@@ -11,6 +11,7 @@ import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
 import cn.edu.zut.softwareengineering.service.ForumPostService;
+import cn.edu.zut.softwareengineering.service.SparkStatsService;
 import cn.edu.zut.softwareengineering.service.StatisticsService;
 import cn.edu.zut.softwareengineering.service.UserService;
 import cn.edu.zut.softwareengineering.utils.ResultUtil;
@@ -40,17 +41,20 @@ public class AdminController {
     private final ForumPostService postService;
     private final ForumCommentService commentService;
     private final StatisticsService statisticsService;
+    private final SparkStatsService sparkStatsService;
 
     public AdminController(UserService userService,
                            ForumBoardService boardService,
                            ForumPostService postService,
                            ForumCommentService commentService,
-                           StatisticsService statisticsService) {
+                           StatisticsService statisticsService,
+                           SparkStatsService sparkStatsService) {
         this.userService = userService;
         this.boardService = boardService;
         this.postService = postService;
         this.commentService = commentService;
         this.statisticsService = statisticsService;
+        this.sparkStatsService = sparkStatsService;
     }
 
     @GetMapping("/users")// 获取所有用户
@@ -169,5 +173,17 @@ public class AdminController {
     @Operation(summary = "获取每日趋势", description = "数据来源：Spark 跑批写入的 stat_daily_trend 表。days 为查询最近天数，默认 7，最大 90")
     public ResultUtil.Result<List<StatDailyTrend>> getDailyTrend(@RequestParam(required = false) Integer days) {
         return ResultUtil.success(statisticsService.getDailyTrend(days));
+    }
+
+    @PostMapping("/statistics/trigger-spark")
+    @Operation(summary = "手动触发 Spark 跑批", description = "异步调用服务器上的 spark-submit 运行 ForumSparkAnalysis，覆盖刷新 stat_* 统计表。课程演示时无需 SSH 即可刷新统计数据。需配置 SPARK_ENABLED=true 及数据库凭据环境变量。")
+    public ResultUtil.Result<Map<String, Object>> triggerSparkRun() {
+        return ResultUtil.success(sparkStatsService.triggerRun());
+    }
+
+    @GetMapping("/statistics/spark-status")
+    @Operation(summary = "查询 Spark 跑批状态", description = "返回最近一次跑批任务的状态（READY/RUNNING/SUCCESS/FAILED）、起止时间和耗时。")
+    public ResultUtil.Result<Map<String, Object>> getSparkStatus() {
+        return ResultUtil.success(sparkStatsService.getStatus());
     }
 }
