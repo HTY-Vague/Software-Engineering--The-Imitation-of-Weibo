@@ -155,8 +155,10 @@
 | 用户活跃度 | GET | `/admin/statistics/active-users` | 支持参数：`limit`，默认 10，最大 50。数据来源：Spark 跑批写入的 `stat_active_user` 表 |
 | 内容质量分析 | GET | `/admin/statistics/content-quality` | 支持参数：`qualityType`，可选值 `HIGH_LIKE_LOW_COMMENT`（高赞低评论）、`HIGH_COMMENT_LOW_LIKE`（高评论低赞）、`HOT`（综合热门），不传返回全部。数据来源：Spark 跑批写入的 `stat_content_quality` 表 |
 | 每日趋势 | GET | `/admin/statistics/daily-trend` | 支持参数：`days`，默认 7，最大 90。数据来源：Spark 跑批写入的 `stat_daily_trend` 表 |
+| 触发 Spark 跑批 | POST | `/admin/statistics/trigger-spark` | 手动异步触发服务器上的 spark-submit 刷新统计表。需配置 `SPARK_ENABLED=true` 及数据库凭据环境变量。返回 `state`（DISABLED/RUNNING）和 `taskId` |
+| Spark 跑批状态 | GET | `/admin/statistics/spark-status` | 查询最近一次跑批状态：`state`（READY/RUNNING/SUCCESS/FAILED）、`taskId`、`startTime`、`endTime`、`durationMillis`、`message` |
 
-> 上述统计接口的数据由服务器上的 Spark 离线分析程序（`/opt/forum-stats.jar`）每日凌晨 03:00 通过 cron 跑批写入 `stat_*` 表，Spring Boot 端只读展示。统计数据容忍日级延迟，不需要实时。详见 `后端文档/后端部署说明.md` 中 Spark 分析部署章节。
+> 上述统计接口的数据由服务器上的 Spark 离线分析程序（`/opt/forum-stats.jar`）每日凌晨 03:00 通过 cron 跑批写入 `stat_*` 表，Spring Boot 端只读展示。统计数据容忍日级延迟，不需要实时。课程演示时可通过 `POST /admin/statistics/trigger-spark` 手动触发跑批立即刷新统计数据，再用 `GET /admin/statistics/spark-status` 查询执行状态。详见 `后端文档/后端部署说明.md` 中 Spark 分析部署章节。
 
 ### 热门帖子响应示例
 
