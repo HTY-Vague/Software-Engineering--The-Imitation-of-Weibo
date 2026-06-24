@@ -24,8 +24,10 @@ export const deletePost = (postId) => http.delete(`/admin/posts/${postId}`)
 
 export const deleteComment = (commentId) => http.delete(`/admin/comments/${commentId}`)
 
-export const getOverview = () => http.get('/admin/statistics/overview')
-
-export const getHotPosts = (params) => http.get('/admin/statistics/hot-posts', { params })
+// 注意：getOverview / getHotPosts 已迁移到 services/modules/statistics.js
+// 旧 import 路径已废弃，保留注释以便历史引用排查。
+//
+// export const getOverview = () => http.get('/admin/statistics/overview')
+// export const getHotPosts = (params) => http.get('/admin/statistics/hot-posts', { params })
 
 export const getComments = () => http.get('/admin/comments')

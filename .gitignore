@@ -44,3 +44,6 @@ src\main\resources\application.properties
 ### Temporary run logs ###
 app-run.log
 app-run.err.log
+
+### AI Workspace ###
+.workbuddy/

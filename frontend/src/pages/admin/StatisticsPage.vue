@@ -1,22 +1,84 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getHotPosts, getOverview } from '../../services/modules/admin'
+import * as echarts from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import {
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent,
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import {
+  getActiveUsers,
+  getBoardActive,
+  getContentQuality,
+  getDailyTrend,
+  getHotPosts,
+  getOverview,
+  getSparkStatus,
+  triggerSpark,
+} from '../../services/modules/statistics'
 import { getBoards } from '../../services/modules/forum'
-import PostCard from '../../components/post/PostCard.vue'
 
+echarts.use([
+  LineChart,
+  GridComponent,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  CanvasRenderer,
+])
+
+// =================== 状态 ===================
 const loading = ref(false)
+const refreshing = ref(false)
+const sparkState = ref('READY') // READY / RUNNING / SUCCESS / FAILED / DISABLED
+const lastUpdate = ref('')
+
 const overview = ref({})
-const posts = ref([])
+const hotPosts = ref([])
+const boardActive = ref([])
+const activeUsers = ref([])
+const dailyTrend = ref([])
 const boards = ref([])
-const limit = ref(10)
+const qualityData = ref([])
 
-const normalizeList = (payload) => {
-  if (Array.isArray(payload)) {
-    return payload
-  }
+const qualityTab = ref('HIGH_LIKE_LOW_COMMENT')
+const qualityTabs = [
+  { key: 'HIGH_LIKE_LOW_COMMENT', label: '高赞低评论（优质干货）' },
+  { key: 'HIGH_COMMENT_LOW_LIKE', label: '高评论低赞（争议帖）' },
+  { key: 'HOT', label: '综合热门' },
+]
 
-  return payload?.list || payload?.records || []
+const sparkPollTimer = ref(null)
+const sparkDeadline = ref(0) // 5 分钟超时兜底
+
+const trendChartRef = ref(null)
+let trendChart = null
+let resizeObserver = null
+
+let lastTriggerAt = 0 // 防抖
+
+// =================== 工具 ===================
+const formatTime = (raw) => {
+  if (!raw) return ''
+  const d = new Date(raw)
+  if (Number.isNaN(d.getTime())) return raw
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const formatDate = (raw) => {
+  if (!raw) return ''
+  return String(raw).slice(0, 10)
+}
+
+const resolveBoardName = (boardId) => {
+  const target = Number(boardId)
+  const hit = boards.value.find((b) => Number(b.boardId) === target)
+  return hit?.boardName || ''
 }
 
 const stats = computed(() => [
@@ -28,25 +90,45 @@ const stats = computed(() => [
   { label: '点赞总数', value: overview.value.likeCount || 0 },
 ])
 
-const boardNameMap = computed(() => {
-  const map = new Map()
-  boards.value.forEach((item) => map.set(Number(item.boardId), item.boardName))
-  return map
+const qualityItems = computed(() => {
+  const list = Array.isArray(qualityData.value) ? qualityData.value : []
+  return list.filter((it) => it.qualityType === qualityTab.value)
 })
 
-const resolveBoardName = (boardId) => boardNameMap.value.get(Number(boardId)) || ''
-
-const loadData = async () => {
+// =================== 加载 ===================
+const loadAll = async () => {
   loading.value = true
   try {
-    const [overviewData, hotPostsData, boardsData] = await Promise.all([
-      getOverview(),
-      getHotPosts({ limit: limit.value }),
-      getBoards(),
-    ])
-    overview.value = overviewData || {}
-    posts.value = normalizeList(hotPostsData)
-    boards.value = normalizeList(boardsData)
+    const [ov, hot, activeBoards, activeUsersData, quality, trend, boardsData] =
+      await Promise.all([
+        getOverview(),
+        getHotPosts({ limit: 10 }),
+        getBoardActive(),
+        getActiveUsers({ limit: 10 }),
+        getContentQuality(),
+        getDailyTrend({ days: 7 }),
+        getBoards(),
+      ])
+
+    overview.value = ov || {}
+    hotPosts.value = Array.isArray(hot) ? hot : []
+    boardActive.value = Array.isArray(activeBoards) ? activeBoards : []
+    activeUsers.value = Array.isArray(activeUsersData) ? activeUsersData : []
+    qualityData.value = Array.isArray(quality) ? quality : []
+    dailyTrend.value = Array.isArray(trend) ? trend : []
+    boards.value = Array.isArray(boardsData) ? boardsData : []
+
+    const candidates = [
+      overview.value.updateTime,
+      hotPosts.value[0]?.updateTime,
+      boardActive.value[0]?.updateTime,
+      activeUsers.value[0]?.updateTime,
+      dailyTrend.value[0]?.updateTime,
+    ].filter(Boolean)
+    lastUpdate.value = candidates[0] || ''
+
+    await nextTick()
+    renderTrendChart()
   } catch (error) {
     ElMessage.error(error?.message || '统计数据加载失败')
   } finally {
@@ -54,7 +136,147 @@ const loadData = async () => {
   }
 }
 
-onMounted(loadData)
+// =================== Spark 跑批 ===================
+const stopPolling = (newState) => {
+  if (sparkPollTimer.value) {
+    clearInterval(sparkPollTimer.value)
+    sparkPollTimer.value = null
+  }
+  refreshing.value = false
+  if (newState) sparkState.value = newState
+}
+
+const pollSparkStatus = () => {
+  if (sparkPollTimer.value) return
+  sparkDeadline.value = Date.now() + 5 * 60 * 1000 // 5 分钟兜底
+
+  const tick = async () => {
+    if (Date.now() > sparkDeadline.value) {
+      stopPolling('FAILED')
+      ElMessage.error('Spark 跑批超时（5 分钟未结束），请查看服务器日志')
+      return
+    }
+    try {
+      const data = await getSparkStatus()
+      sparkState.value = data?.state || 'READY'
+      if (sparkState.value === 'RUNNING') return
+      stopPolling()
+      if (sparkState.value === 'SUCCESS') {
+        ElMessage.success('Spark 跑批完成，已刷新统计')
+        await loadAll()
+      } else if (sparkState.value === 'FAILED') {
+        ElMessage.error('Spark 跑批失败，请查看后端日志')
+      } else if (sparkState.value === 'DISABLED') {
+        ElMessage.warning('Spark 跑批未启用（缺少配置）')
+      }
+    } catch (err) {
+      stopPolling()
+      ElMessage.error(err?.message || '查询跑批状态失败')
+    }
+  }
+  sparkPollTimer.value = setInterval(tick, 2000)
+  tick()
+}
+
+const onRefresh = async () => {
+  if (refreshing.value) return
+  const now = Date.now()
+  if (now - lastTriggerAt < 800) return // 800ms 防抖
+  lastTriggerAt = now
+
+  refreshing.value = true
+  sparkState.value = 'RUNNING'
+  try {
+    const data = await triggerSpark()
+    if (data?.state === 'DISABLED') {
+      refreshing.value = false
+      sparkState.value = 'DISABLED'
+      ElMessage.warning(data?.message || 'Spark 跑批未启用')
+      return
+    }
+    ElMessage.info('已触发 Spark 跑批，等待结果…')
+    pollSparkStatus()
+  } catch (err) {
+    refreshing.value = false
+    ElMessage.error(err?.message || '触发 Spark 跑批失败')
+  }
+}
+
+// =================== 趋势图 ===================
+const buildTrendOption = () => {
+  const ordered = [...dailyTrend.value].sort((a, b) =>
+    String(a.statDate).localeCompare(String(b.statDate)),
+  )
+  const dates = ordered.map((d) => formatDate(d.statDate))
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0 },
+    grid: { left: 40, right: 24, top: 40, bottom: 30 },
+    xAxis: { type: 'category', boundaryGap: false, data: dates },
+    yAxis: { type: 'value' },
+    series: [
+      { name: '新增用户', type: 'line', smooth: true, data: ordered.map((d) => d.newUserCount || 0) },
+      { name: '新增帖子', type: 'line', smooth: true, data: ordered.map((d) => d.newPostCount || 0) },
+      { name: '新增评论', type: 'line', smooth: true, data: ordered.map((d) => d.newCommentCount || 0) },
+      { name: '新增点赞', type: 'line', smooth: true, data: ordered.map((d) => d.newLikeCount || 0) },
+    ],
+  }
+}
+
+const renderTrendChart = () => {
+  if (!trendChartRef.value) return
+  if (!trendChart) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+  trendChart.setOption(buildTrendOption(), true)
+}
+
+const handleResize = () => trendChart && trendChart.resize()
+
+const attachChartResize = () => {
+  if (typeof ResizeObserver === 'undefined' || !trendChartRef.value) return
+  resizeObserver = new ResizeObserver(() => trendChart?.resize())
+  resizeObserver.observe(trendChartRef.value)
+}
+
+// =================== 生命周期 ===================
+onMounted(async () => {
+  await loadAll()
+  attachChartResize()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', handleResize)
+  }
+})
+
+onBeforeUnmount(() => {
+  stopPolling()
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  if (trendChart) {
+    trendChart.dispose()
+    trendChart = null
+  }
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', handleResize)
+  }
+})
+
+const sparkStateText = computed(() => {
+  switch (sparkState.value) {
+    case 'RUNNING':
+      return '跑批中…'
+    case 'SUCCESS':
+      return '最近跑批：成功'
+    case 'FAILED':
+      return '最近跑批：失败'
+    case 'DISABLED':
+      return '跑批未启用'
+    default:
+      return '未触发'
+  }
+})
 </script>
 
 <template>
@@ -63,41 +285,191 @@ onMounted(loadData)
       <div>
         <p class="eyebrow">Admin / Statistics</p>
         <h1>数据统计</h1>
-        <p class="sub">查看概览指标和热门帖子。</p>
+        <p class="sub">
+          概览、排行与趋势由 Spark 离线分析每日 03:00 刷新。
+          <span v-if="lastUpdate">最近更新于 {{ formatTime(lastUpdate) }}</span>
+          <span v-else>暂无更新记录</span>
+        </p>
       </div>
       <div class="hero-actions">
-        <el-input-number v-model="limit" :min="1" :max="50" controls-position="right" />
-        <el-button type="primary" @click="loadData">刷新</el-button>
+        <span class="spark-state" :data-state="sparkState">{{ sparkStateText }}</span>
+        <el-button
+          type="primary"
+          :loading="refreshing"
+          :disabled="refreshing"
+          @click="onRefresh"
+        >
+          刷新统计
+        </el-button>
       </div>
     </section>
 
     <section v-if="loading" class="state">正在加载统计数据...</section>
 
-    <section v-else class="stack">
-      <section class="stats-grid">
-        <article v-for="item in stats" :key="item.label" class="panel stat-card">
+    <template v-else>
+      <!-- 概览卡片 -->
+      <section class="panel stats-grid">
+        <article v-for="item in stats" :key="item.label" class="stat-card">
           <span class="label">{{ item.label }}</span>
           <strong>{{ item.value }}</strong>
         </article>
       </section>
 
-      <section class="panel">
-        <div class="section-head">
-          <h2>热门帖子</h2>
-          <span>{{ posts.length }} 条</span>
-        </div>
+      <!-- 热门帖子 + 板块活跃度 -->
+      <section class="grid-2">
+        <article class="panel">
+          <header class="section-head">
+            <h2>热门帖子排行</h2>
+            <span>共 {{ hotPosts.length }} 条</span>
+          </header>
+          <div v-if="!hotPosts.length" class="empty">暂无热门帖子数据</div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 56px">排名</th>
+                <th>标题</th>
+                <th style="width: 80px">浏览</th>
+                <th style="width: 80px">点赞</th>
+                <th style="width: 80px">评论</th>
+                <th style="width: 100px">热度分</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in hotPosts" :key="row.postId">
+                <td><span class="rank">#{{ row.rankNum }}</span></td>
+                <td class="title-cell">
+                  <div class="title">{{ row.title }}</div>
+                  <div class="meta-text">
+                    {{ resolveBoardName(row.boardId) || `板块#${row.boardId}` }}
+                  </div>
+                </td>
+                <td>{{ row.viewCount }}</td>
+                <td>{{ row.likeCount }}</td>
+                <td>{{ row.commentCount }}</td>
+                <td><strong>{{ Number(row.hotScore || 0).toFixed(1) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
 
-        <div v-if="!posts.length" class="empty">暂无热门帖子数据</div>
-        <div v-else class="list">
-          <PostCard
-            v-for="post in posts"
-            :key="post.postId"
-            :post="post"
-            :board-name="resolveBoardName(post.boardId)"
-          />
-        </div>
+        <article class="panel">
+          <header class="section-head">
+            <h2>板块活跃度</h2>
+            <span>共 {{ boardActive.length }} 个</span>
+          </header>
+          <div v-if="!boardActive.length" class="empty">暂无板块活跃度数据</div>
+          <table v-else class="data-table">
+            <thead>
+              <tr>
+                <th>板块</th>
+                <th style="width: 80px">帖子</th>
+                <th style="width: 80px">点赞</th>
+                <th style="width: 80px">评论</th>
+                <th style="width: 100px">活跃度</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in boardActive" :key="row.boardId">
+                <td>{{ row.boardName || `#${row.boardId}` }}</td>
+                <td>{{ row.postCount }}</td>
+                <td>{{ row.likeSum }}</td>
+                <td>{{ row.commentSum }}</td>
+                <td><strong>{{ Number(row.activeScore || 0).toFixed(1) }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
       </section>
-    </section>
+
+      <!-- 用户活跃度 -->
+      <section class="panel">
+        <header class="section-head">
+          <h2>用户活跃度排行</h2>
+          <span>共 {{ activeUsers.length }} 位</span>
+        </header>
+        <div v-if="!activeUsers.length" class="empty">暂无用户活跃度数据</div>
+        <table v-else class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 56px">排名</th>
+              <th>用户</th>
+              <th style="width: 80px">发帖</th>
+              <th style="width: 80px">评论</th>
+              <th style="width: 80px">获赞</th>
+              <th style="width: 100px">活跃度</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in activeUsers" :key="row.userId">
+              <td><span class="rank">#{{ row.rankNum }}</span></td>
+              <td>
+                <div class="title">{{ row.nickname || row.username }}</div>
+                <div class="meta-text">@{{ row.username }}</div>
+              </td>
+              <td>{{ row.postCount }}</td>
+              <td>{{ row.commentCount }}</td>
+              <td>{{ row.likeCount }}</td>
+              <td><strong>{{ Number(row.activeScore || 0).toFixed(1) }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 内容质量分析 -->
+      <section class="panel">
+        <header class="section-head">
+          <h2>内容质量分析</h2>
+          <span>共 {{ qualityData.length }} 条</span>
+        </header>
+        <el-tabs v-model="qualityTab">
+          <el-tab-pane
+            v-for="t in qualityTabs"
+            :key="t.key"
+            :label="t.label"
+            :name="t.key"
+          />
+        </el-tabs>
+        <div v-if="!qualityItems.length" class="empty">该分类暂无内容</div>
+        <table v-else class="data-table">
+          <thead>
+            <tr>
+              <th>帖子</th>
+              <th style="width: 80px">浏览</th>
+              <th style="width: 80px">点赞</th>
+              <th style="width: 80px">评论</th>
+              <th style="width: 140px">分类</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in qualityItems" :key="row.postId">
+              <td>
+                <div class="title">{{ row.title }}</div>
+              </td>
+              <td>{{ row.viewCount }}</td>
+              <td>{{ row.likeCount }}</td>
+              <td>{{ row.commentCount }}</td>
+              <td>
+                <el-tag
+                  :type="row.qualityType === 'HOT' ? 'danger' : (row.qualityType === 'HIGH_LIKE_LOW_COMMENT' ? 'success' : 'warning')"
+                  size="small"
+                >
+                  {{ row.qualityType }}
+                </el-tag>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- 每日趋势 -->
+      <section class="panel">
+        <header class="section-head">
+          <h2>每日趋势</h2>
+          <span>近 {{ dailyTrend.length }} 天</span>
+        </header>
+        <div ref="trendChartRef" class="trend-chart"></div>
+      </section>
+    </template>
   </main>
 </template>
 
@@ -109,11 +481,13 @@ onMounted(loadData)
     radial-gradient(circle at top left, rgba(227, 76, 47, 0.12), transparent 28%),
     radial-gradient(circle at bottom right, rgba(31, 26, 23, 0.08), transparent 36%),
     var(--bg);
+  display: grid;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .hero {
-  width: min(1200px, 100%);
-  margin: 0 auto 24px;
   background: rgba(255, 255, 255, 0.84);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(225, 217, 209, 0.9);
@@ -124,6 +498,7 @@ onMounted(loadData)
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .eyebrow {
@@ -143,6 +518,9 @@ h1 {
 .sub {
   margin: 14px 0 0;
   color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .hero-actions {
@@ -151,17 +529,24 @@ h1 {
   align-items: center;
 }
 
-.stack {
-  width: min(1200px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 20px;
+.spark-state {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--muted);
 }
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+.spark-state[data-state='RUNNING'] {
+  background: rgba(64, 158, 255, 0.12);
+  color: #1d6fd1;
+}
+.spark-state[data-state='SUCCESS'] {
+  background: rgba(103, 194, 58, 0.16);
+  color: #2f7d23;
+}
+.spark-state[data-state='FAILED'] {
+  background: rgba(245, 108, 108, 0.18);
+  color: #b13a3a;
 }
 
 .panel {
@@ -169,23 +554,30 @@ h1 {
   backdrop-filter: blur(16px);
   border: 1px solid rgba(225, 217, 209, 0.9);
   border-radius: 28px;
-  padding: 20px;
+  padding: 20px 24px;
   box-shadow: var(--shadow);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .stat-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 8px 4px;
 }
 
 .label {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
-strong {
-  font-size: 32px;
+.stat-card strong {
+  font-size: 28px;
   color: var(--text);
 }
 
@@ -193,22 +585,77 @@ strong {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .section-head span,
 .empty {
   color: var(--muted);
+  font-size: 13px;
 }
 
-.list {
+.grid-2 {
   display: grid;
-  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(225, 217, 209, 0.7);
+}
+
+.data-table th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rank {
+  display: inline-block;
+  min-width: 28px;
+  padding: 2px 8px;
+  background: rgba(227, 76, 47, 0.12);
+  color: var(--accent);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.title-cell .title,
+.title {
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360px;
+}
+
+.title-cell .meta-text,
+.meta-text {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 .state {
@@ -223,9 +670,17 @@ strong {
   text-align: center;
 }
 
-@media (max-width: 960px) {
+.trend-chart {
+  width: 100%;
+  height: 320px;
+}
+
+@media (max-width: 1080px) {
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -234,9 +689,8 @@ strong {
     flex-direction: column;
     align-items: flex-start;
   }
-
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

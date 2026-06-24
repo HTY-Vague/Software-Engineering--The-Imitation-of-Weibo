@@ -32,7 +32,25 @@ http.interceptors.response.use(
     }
     return response.data
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    // 401 统一处理：清登录态并跳登录页，避免在登录页循环跳转
+    const status = error?.response?.status
+    if (status === 401) {
+      try {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      } catch (_) {
+        // localStorage 不可用时静默忽略
+      }
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.startsWith('/login')
+      ) {
+        window.location.replace('/login')
+      }
+    }
+    return Promise.reject(error)
+  }
 )
 
 export default http

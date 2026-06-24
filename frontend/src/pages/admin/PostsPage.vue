@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { deletePost, getHotPosts, setPostTop } from '../../services/modules/admin'
+import { deletePost, setPostTop } from '../../services/modules/admin'
+import { getHotPosts } from '../../services/modules/statistics'
 import { getBoards } from '../../services/modules/forum'
 import PostCard from '../../components/post/PostCard.vue'
 
