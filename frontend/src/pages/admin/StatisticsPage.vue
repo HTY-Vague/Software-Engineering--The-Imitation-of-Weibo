@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'
-import { LineChart } from 'echarts/charts'
+import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
@@ -24,6 +24,8 @@ import { getBoards } from '../../services/modules/forum'
 
 echarts.use([
   LineChart,
+  BarChart,
+  PieChart,
   GridComponent,
   TitleComponent,
   TooltipComponent,
@@ -56,7 +58,11 @@ const sparkPollTimer = ref(null)
 const sparkDeadline = ref(0) // 5 分钟超时兜底
 
 const trendChartRef = ref(null)
+const pieChartRef = ref(null)
+const barChartRef = ref(null)
 let trendChart = null
+let pieChart = null
+let barChart = null
 let resizeObserver = null
 
 let lastTriggerAt = 0 // 防抖
@@ -128,7 +134,7 @@ const loadAll = async () => {
     lastUpdate.value = candidates[0] || ''
 
     await nextTick()
-    renderTrendChart()
+    renderCharts()
   } catch (error) {
     ElMessage.error(error?.message || '统计数据加载失败')
   } finally {
@@ -223,20 +229,136 @@ const buildTrendOption = () => {
   }
 }
 
+// =================== 饼状图 ===================
+const buildPieOption = () => {
+  const groups = {}
+  const list = Array.isArray(qualityData.value) ? qualityData.value : []
+  list.forEach((item) => {
+    const key = item.qualityType || '其他'
+    if (!groups[key]) groups[key] = 0
+    groups[key]++
+  })
+
+  const labels = { HIGH_LIKE_LOW_COMMENT: '高赞低评论', HIGH_COMMENT_LOW_LIKE: '高评论低赞', HOT: '综合热门' }
+  const colors = ['#67c23a', '#e6a23c', '#f56c6c']
+  const pieData = Object.entries(groups).map(([key, value], i) => ({
+    name: labels[key] || key,
+    value,
+    itemStyle: { color: colors[i % colors.length] },
+  }))
+
+  return {
+    title: {
+      text: '内容质量分布',
+      left: 'center',
+      textStyle: { fontSize: 14, color: '#303133' },
+    },
+    tooltip: { trigger: 'item', formatter: '{b}: {c} 篇（{d}%）' },
+    legend: { bottom: 0 },
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '75%'],        // 环形饼图
+        center: ['50%', '48%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 3 },
+        label: { show: true, formatter: '{b}\n{d}%' },
+        emphasis: { scaleSize: 8, label: { fontSize: 16, fontWeight: 'bold' } },
+        data: pieData.length ? pieData : [{ name: '暂无数据', value: 1, itemStyle: { color: '#e0e0e0' } }],
+      },
+    ],
+  }
+}
+
+// =================== 柱状图 ===================
+const buildBarOption = () => {
+  const top10 = [...boardActive.value].sort((a, b) => (b.activeScore || 0) - (a.activeScore || 0)).slice(0, 10)
+  const names = top10.map((b) => b.boardName || `#${b.boardId}`)
+  return {
+    title: {
+      text: '板块活跃度对比（TOP 10）',
+      left: 'center',
+      textStyle: { fontSize: 14, color: '#303133' },
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+    },
+    legend: { top: 24 },
+    grid: { left: 40, right: 24, top: 56, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: names,
+      axisLabel: { rotate: names.length > 5 ? 30 : 0, fontSize: 11 },
+    },
+    yAxis: { type: 'value' },
+    series: [
+      {
+        name: '帖子数',
+        type: 'bar',
+        data: top10.map((b) => b.postCount || 0),
+        itemStyle: { color: '#409eff' },
+        barMaxWidth: 36,
+      },
+      {
+        name: '点赞数',
+        type: 'bar',
+        data: top10.map((b) => b.likeSum || 0),
+        itemStyle: { color: '#67c23a' },
+        barMaxWidth: 36,
+      },
+      {
+        name: '评论数',
+        type: 'bar',
+        data: top10.map((b) => b.commentSum || 0),
+        itemStyle: { color: '#e6a23c' },
+        barMaxWidth: 36,
+      },
+    ],
+  }
+}
+
+// =================== 图表渲染 ===================
 const renderTrendChart = () => {
   if (!trendChartRef.value) return
-  if (!trendChart) {
-    trendChart = echarts.init(trendChartRef.value)
-  }
+  if (!trendChart) trendChart = echarts.init(trendChartRef.value)
   trendChart.setOption(buildTrendOption(), true)
 }
 
-const handleResize = () => trendChart && trendChart.resize()
+const renderPieChart = () => {
+  if (!pieChartRef.value) return
+  if (!pieChart) pieChart = echarts.init(pieChartRef.value)
+  pieChart.setOption(buildPieOption(), true)
+}
+
+const renderBarChart = () => {
+  if (!barChartRef.value) return
+  if (!barChart) barChart = echarts.init(barChartRef.value)
+  barChart.setOption(buildBarOption(), true)
+}
+
+const renderCharts = () => {
+  renderTrendChart()
+  renderPieChart()
+  renderBarChart()
+}
+
+const handleResize = () => {
+  trendChart?.resize()
+  pieChart?.resize()
+  barChart?.resize()
+}
 
 const attachChartResize = () => {
-  if (typeof ResizeObserver === 'undefined' || !trendChartRef.value) return
-  resizeObserver = new ResizeObserver(() => trendChart?.resize())
-  resizeObserver.observe(trendChartRef.value)
+  if (typeof ResizeObserver === 'undefined') return
+  resizeObserver = new ResizeObserver(() => {
+    trendChart?.resize()
+    pieChart?.resize()
+    barChart?.resize()
+  })
+  if (trendChartRef.value) resizeObserver.observe(trendChartRef.value)
+  if (pieChartRef.value) resizeObserver.observe(pieChartRef.value)
+  if (barChartRef.value) resizeObserver.observe(barChartRef.value)
 }
 
 // =================== 生命周期 ===================
@@ -254,10 +376,13 @@ onBeforeUnmount(() => {
     resizeObserver.disconnect()
     resizeObserver = null
   }
-  if (trendChart) {
-    trendChart.dispose()
-    trendChart = null
-  }
+  const dispose = (inst) => { try { inst?.dispose() } catch (_) { /* noop */ } }
+  dispose(trendChart)
+  dispose(pieChart)
+  dispose(barChart)
+  trendChart = null
+  pieChart = null
+  barChart = null
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', handleResize)
   }
@@ -459,6 +584,16 @@ const sparkStateText = computed(() => {
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <!-- 饼状图 + 柱状图 -->
+      <section class="grid-2">
+        <article class="panel">
+          <div ref="pieChartRef" class="chart-box"></div>
+        </article>
+        <article class="panel">
+          <div ref="barChartRef" class="chart-box"></div>
+        </article>
       </section>
 
       <!-- 每日趋势 -->
@@ -673,6 +808,11 @@ h1 {
 .trend-chart {
   width: 100%;
   height: 320px;
+}
+
+.chart-box {
+  width: 100%;
+  height: 340px;
 }
 
 @media (max-width: 1080px) {
