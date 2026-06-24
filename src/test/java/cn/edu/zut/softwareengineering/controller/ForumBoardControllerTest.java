@@ -90,9 +90,9 @@ class ForumBoardControllerTest {
     }
 
     @Test
-    @DisplayName("未登录时访问板块接口被拦截")
+    @DisplayName("未登录时访问受保护接口被拦截")
     void unauthenticatedAccessIsBlocked() throws Exception {
-        mockMvc.perform(post("/forum/boards"))
+        mockMvc.perform(post("/user/profile"))
                 .andExpect(status().isForbidden());
     }
 

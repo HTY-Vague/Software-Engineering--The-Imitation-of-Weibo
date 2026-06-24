@@ -92,7 +92,7 @@ class ExceptionResponseTest {
     @Test
     @DisplayName("JWT 无效时返回 403")
     void invalidJwtReturns403() throws Exception {
-        mockMvc.perform(post("/posts/list")
+        mockMvc.perform(post("/user/profile")
                         .header("Authorization", "Bearer invalid.token.here"))
                 .andExpect(status().isForbidden());
     }

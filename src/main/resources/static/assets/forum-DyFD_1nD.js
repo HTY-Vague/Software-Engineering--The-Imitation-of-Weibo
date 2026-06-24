@@ -1,0 +1,1 @@
+import{a as e}from"./index-BgYr_Vc4.js";var t=()=>e.post(`/forum/boards`),n=t=>e.post(`/forum/board/posts`,t);export{t as n,n as t};

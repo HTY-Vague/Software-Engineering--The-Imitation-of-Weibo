@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers("/comments/list").permitAll()
                 .requestMatchers("/likes/count").permitAll()
                 .requestMatchers("/doc.html", "/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                .requestMatchers("/", "/index.html", "/favicon.svg", "/icons.svg", "/assets/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

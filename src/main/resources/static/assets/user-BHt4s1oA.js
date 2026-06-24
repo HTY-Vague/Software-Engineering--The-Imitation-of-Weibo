@@ -1,0 +1,1 @@
+import{a as e}from"./index-BgYr_Vc4.js";var t=()=>e.post(`/user/profile`),n=t=>e.post(`/user/update/profile`,t),r=t=>e.post(`/user/update/password`,t),i=()=>e.post(`/user/posts`),a=t=>e.post(`/user/delete/post`,null,{params:t}),o=()=>e.post(`/user/comments`);export{r as a,t as i,o as n,n as o,i as r,a as t};

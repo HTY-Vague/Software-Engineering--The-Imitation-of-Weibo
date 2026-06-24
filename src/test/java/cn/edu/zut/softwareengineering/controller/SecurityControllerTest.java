@@ -88,7 +88,7 @@ class SecurityControllerTest {
     @Test
     @DisplayName("未登录访问受保护接口时被拦截")
     void protectedEndpointRequiresLogin() throws Exception {
-        mockMvc.perform(post("/posts/list"))
+        mockMvc.perform(post("/user/profile"))
                 .andExpect(status().isForbidden());
     }
 
