@@ -38,6 +38,10 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/forum/boards", "/forum/board/posts").permitAll()
+                .requestMatchers("/posts/detail", "/posts/list").permitAll()
+                .requestMatchers("/comments/list").permitAll()
+                .requestMatchers("/likes/count").permitAll()
                 .requestMatchers("/doc.html", "/swagger-ui/**", "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
