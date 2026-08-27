@@ -17,6 +17,8 @@
         <result column="status" property="status"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
+        <result column="author_username" property="authorUsername"/>
+        <result column="author_nickname" property="authorNickname"/>
     </resultMap>
 
     <insert id="insertPost" parameterType="cn.edu.zut.softwareengineering.entity.ForumPost" useGeneratedKeys="true" keyProperty="postId">
@@ -25,23 +27,27 @@
     </insert>
 
     <select id="getPostById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
-        SELECT post_id, board_id, author_id, title, content, view_count, like_count, comment_count, is_top, status, create_time, update_time
-        FROM forum_post
-        WHERE post_id = #{postId}
-          AND status = 1
+        SELECT p.post_id, p.board_id, p.author_id, p.title, p.content, p.view_count, p.like_count, p.comment_count, p.is_top, p.status, p.create_time, p.update_time,
+               u.username AS author_username, u.nickname AS author_nickname
+        FROM forum_post p
+        LEFT JOIN sys_user u ON u.user_id = p.author_id
+        WHERE p.post_id = #{postId}
+          AND p.status = 1
     </select>
 
     <select id="getPosts" resultMap="BaseResultMap">
-        SELECT post_id, board_id, author_id, title, content, view_count, like_count, comment_count, is_top, status, create_time, update_time
-        FROM forum_post
+        SELECT p.post_id, p.board_id, p.author_id, p.title, p.content, p.view_count, p.like_count, p.comment_count, p.is_top, p.status, p.create_time, p.update_time,
+               u.username AS author_username, u.nickname AS author_nickname
+        FROM forum_post p
+        LEFT JOIN sys_user u ON u.user_id = p.author_id
         <where>
-            status = 1
-            <if test="boardId != null">AND board_id = #{boardId}</if>
+            p.status = 1
+            <if test="boardId != null">AND p.board_id = #{boardId}</if>
             <if test="keyword != null and keyword != ''">
-                AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
+                AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.content LIKE CONCAT('%', #{keyword}, '%'))
             </if>
         </where>
-        ORDER BY is_top DESC, create_time DESC
+        ORDER BY p.is_top DESC, p.create_time DESC
         LIMIT #{offset}, #{size}
     </select>
 
@@ -114,10 +120,12 @@
     </select>
 
     <select id="getHotPosts" resultMap="BaseResultMap">
-        SELECT post_id, board_id, author_id, title, content, view_count, like_count, comment_count, is_top, status, create_time, update_time
-        FROM forum_post
-        WHERE status = 1
-        ORDER BY view_count DESC, like_count DESC, comment_count DESC, create_time DESC
+        SELECT p.post_id, p.board_id, p.author_id, p.title, p.content, p.view_count, p.like_count, p.comment_count, p.is_top, p.status, p.create_time, p.update_time,
+               u.username AS author_username, u.nickname AS author_nickname
+        FROM forum_post p
+        LEFT JOIN sys_user u ON u.user_id = p.author_id
+        WHERE p.status = 1
+        ORDER BY p.view_count DESC, p.like_count DESC, p.comment_count DESC, p.create_time DESC
         LIMIT #{limit}
     </select>
 

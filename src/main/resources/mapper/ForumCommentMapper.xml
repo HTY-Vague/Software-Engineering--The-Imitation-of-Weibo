@@ -15,6 +15,10 @@
         <result column="status" property="status"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
+        <result column="username" property="username"/>
+        <result column="nickname" property="nickname"/>
+        <result column="reply_username" property="replyUsername"/>
+        <result column="reply_nickname" property="replyNickname"/>
     </resultMap>
 
     <insert id="insertComment" parameterType="cn.edu.zut.softwareengineering.entity.ForumComment" useGeneratedKeys="true" keyProperty="commentId">
@@ -30,14 +34,18 @@
     </select>
 
     <select id="getCommentsByPostId" parameterType="java.lang.Integer" resultMap="BaseResultMap">
-        SELECT comment_id, post_id, user_id, parent_comment_id, reply_user_id, content, like_count, status, create_time, update_time
-        FROM forum_comment
-        WHERE post_id = #{postId}
-          AND status = 1
+        SELECT c.comment_id, c.post_id, c.user_id, c.parent_comment_id, c.reply_user_id, c.content, c.like_count, c.status, c.create_time, c.update_time,
+               u.username AS username, u.nickname AS nickname,
+               ru.username AS reply_username, ru.nickname AS reply_nickname
+        FROM forum_comment c
+        LEFT JOIN sys_user u ON u.user_id = c.user_id
+        LEFT JOIN sys_user ru ON ru.user_id = c.reply_user_id
+        WHERE c.post_id = #{postId}
+          AND c.status = 1
         ORDER BY
-          CASE WHEN parent_comment_id IS NULL THEN comment_id ELSE parent_comment_id END ASC,
-          parent_comment_id ASC,
-          create_time ASC
+          CASE WHEN c.parent_comment_id IS NULL THEN c.comment_id ELSE c.parent_comment_id END ASC,
+          c.parent_comment_id ASC,
+          c.create_time ASC
     </select>
 
         <select id="getAllComments" resultMap="BaseResultMap">

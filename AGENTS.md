@@ -1,6 +1,6 @@
 # AGENTS.md
 
-本文件是给后续开发者和 AI Agent 使用的项目工作手册。进入本仓库后，优先阅读本文，再根据任务继续查看 `README.md`、`API接口清单.md` 和 `后端文档/` 下的专题文档。
+本文件是给后续开发者和 AI Agent 使用的项目工作手册。进入本仓库后，优先阅读本文，再根据任务继续查看 `README.md`、`API接口清单.md` 和 `文档/` 下的专题文档（需求分析、数据库设计、项目实验报告）。
 
 ## 项目概览
 
@@ -10,7 +10,7 @@
 注册 -> 登录 -> 浏览板块 -> 查看帖子 -> 发布帖子 -> 评论互动 -> 点赞 -> 管理员管理
 ```
 
-当前仓库主要是后端 Spring Boot 工程。系统保留用户、板块、帖子、评论、点赞、后台管理和统计等核心能力，不包含关注、私信、复杂推荐、用户自建板块等高复杂度功能。
+当前仓库包含后端 Spring Boot 工程（`src/`）和 Vue 3 前端工程（`frontend/`），生产部署采用前后端一体打包（前端构建产物内嵌 `src/main/resources/static/`，SPA 路由由后端兜底转发）。系统保留用户、板块、帖子、评论、点赞、后台管理和统计等核心能力，不包含关注、私信、复杂推荐、用户自建板块等高复杂度功能。
 
 主要角色：
 
@@ -34,7 +34,7 @@
 - Maven
 - JUnit 5、Mockito、Spring Boot Test、MockMvc
 
-规划中的前端技术栈：
+前端技术栈（已实现，位于 `frontend/`）：
 
 - Vue 3
 - Vite
@@ -43,6 +43,7 @@
 - Pinia
 - Vue Router
 - WangEditor
+- ECharts（统计可视化）
 
 环境要求：
 
@@ -61,7 +62,9 @@
 - `demo_data.sql`：演示数据脚本，包含管理员和普通用户演示账号。
 - `.env.example`：环境变量配置示例。不要把真实数据库密码、JWT 密钥或服务器凭据写入仓库。
 - `pom.xml`：Maven 项目配置和依赖版本。
-- `后端文档/`：需求分析、数据库设计、开发实施方案、部署说明、测试报告等交付文档。
+- `文档/`：交付文档集，包含需求分析、数据库设计和项目实验报告（含部署、测试与实现分析）。
+- `验收材料/`：验收交付材料，含数据库脚本、CSV 数据文件和大数据脚本（`datagen.ps1`、`BulkDataLoader` 等）。
+- `frontend/`：Vue 3 前端工程。开发用 `npm run dev`；一体打包时构建产物复制到 `src/main/resources/static/`。
 
 后端源码结构：
 
@@ -80,10 +83,12 @@ src/main/java/cn/edu/zut/softwareengineering/
 
 - `src/main/resources/application.properties`：应用配置，运行时应优先通过环境变量覆盖。
 - `src/main/resources/mapper/*.xml`：Mapper SQL，项目约定 SQL 写在 XML 中。
+- `src/main/resources/static/`：内嵌的前端构建产物（由 `frontend/` 构建后复制而来），不要手动编辑其中单个资源文件。
 - `src/test/java/**`：自动化测试，包括 Service、Controller、安全、OpenAPI 和数据库联调入口。
 - `target/`：Maven 构建产物，不应手动维护，也不应作为源码依据。
-- `spark-stats/`：Spark 离线分析独立工程（独立 pom + Java 21），编译成 jar 在服务器上通过 `spark-submit` 跑批写统计表，不依赖主工程运行时。
+- `spark-stats/`：Spark 离线分析独立工程（独立 pom + Java 21），编译成 jar 在服务器上通过 `spark-submit` 跑批写统计表，不依赖主工程运行时。另含大数据工具：`datagen.ps1` 生成业务表 CSV，`BulkDataLoader` 通过 Spark 批量导入数据库。
 - `spark_stats.sql` / `spark_demo_data.sql`：统计表建表脚本和演示数据脚本。
+- SPA 路由兜底：`WebMvcConfig` 与 `SpaErrorController` 将未匹配的 GET 请求转发到 `index.html`，改前端路由时无需调整；新增后端接口前缀时注意避免与前端路由冲突。
 
 ## 常用命令
 
@@ -112,6 +117,15 @@ mysql -u root -p < SoftwareEngineering.sql
 mysql -u root -p < demo_data.sql
 ```
 
+前端开发与一体打包：
+
+```bash
+cd frontend
+npm install
+npm run dev          # 开发模式，接口基址在 frontend/.env.local 中用 VITE_API_BASE_URL 指定
+npm run build        # 构建产物在 frontend/dist，复制到 src/main/resources/static/ 后重新打包后端
+```
+
 真实 MySQL 联调测试需要显式开启，示例：
 
 ```powershell
@@ -129,7 +143,7 @@ mvn -Dtest=DatabaseIntegrationIT test
 
 ## 核心模块状态
 
-截至当前文档整理时，项目状态如下：
+截至当前文档整理时（2026-08），项目状态如下：
 
 | 模块 | 当前状态 | 说明 |
 |------|----------|------|
@@ -142,24 +156,26 @@ mvn -Dtest=DatabaseIntegrationIT test
 | 点赞管理 | 完成 | 帖子/评论通用点赞、取消点赞、状态查询、计数同步已具备 |
 | 后台管理 | 完成 | 用户、板块、帖子、评论管理，统计概览和热门帖子已具备 |
 | Spark 分析 | 完成 | 独立进程 `spark-stats` 每日跑批写 6 张统计表，统计接口改读统计表展示 |
-| 自动化测试 | 完成 | 常规回归记录为 65 个测试通过，失败 0、错误 0、跳过 0 |
+| 大数据工具 | 完成 | `datagen.ps1` 生成业务表 CSV，`BulkDataLoader` Spark 批量导入，验收材料已归档 |
+| 自动化测试 | 完成 | 常规回归实测 67 个测试通过，失败 0、错误 0、跳过 0（另有 `DatabaseIntegrationIT` 需显式开启） |
 | 数据库联调 | 已有入口 | `DatabaseIntegrationIT` 可验证真实 MySQL 和核心 Mapper SQL |
 | Spark 跑批 | 已部署验证 | 服务器上 Spark 4.1.2 + Java 21 跑批通过，cron 每日 03:00 |
-| 文档 | 基本完成 | README、API 清单、部署说明、测试报告、数据库设计等已整理 |
-| 前端应用 | 待开发 | README 中规划为 Vue 3 + Element Plus，目前仓库以后端为主 |
+| 文档 | 基本完成 | README、API 清单、`文档/` 下需求分析/数据库设计/项目实验报告已整理 |
+| 前端应用 | 完成 | Vue 3 + Element Plus + ECharts，15 个页面、8 个公共组件、统计可视化与跑批交互 |
+| 一体打包部署 | 完成 | 前端构建产物内嵌 `src/main/resources/static/`，SPA 路由由后端兜底转发 |
 
 ## API 与数据库
 
-接口前缀约定：
+接口前缀约定（以 `SecurityConfig` 为准）：
 
 | 模块 | 路径前缀 | 权限说明 |
 |------|----------|----------|
 | 认证 | `/auth/*` | 公开访问 |
 | 用户 | `/user/*` | USER/ADMIN |
-| 板块 | `/forum/*` | USER/ADMIN |
-| 帖子 | `/posts/*` | USER/ADMIN |
-| 评论 | `/comments/*` | USER/ADMIN |
-| 点赞 | `/likes/*` | USER/ADMIN |
+| 板块 | `/forum/*` | 板块列表与板块帖子公开，其余需登录 |
+| 帖子 | `/posts/*` | `/posts/detail`、`/posts/list` 公开，其余需登录 |
+| 评论 | `/comments/*` | `/comments/list` 公开，其余需登录 |
+| 点赞 | `/likes/*` | `/likes/count` 公开，其余需登录 |
 | 管理员 | `/admin/*` | 仅 ADMIN |
 
 统一响应格式为 `ResultUtil.Result<T>`：
@@ -216,17 +232,19 @@ mvn -Dtest=DatabaseIntegrationIT test
 
 - README 负责总览和快速开始。
 - `API接口清单.md` 负责前后端联调细节。
-- `后端文档/后端测试报告.md` 负责测试范围、结果和遗留风险。
-- `后端文档/后端部署说明.md` 负责部署步骤和运行环境说明。
+- `文档/需求分析.md` 负责需求分析与系统设计。
+- `文档/数据库设计.md` 负责数据库 ER 设计与建表说明。
+- `文档/项目实验报告.md` 负责整体实现分析、部署、测试范围与结果。
 - 本文件负责给后续 Agent 的工作入口、项目状态和协作约束。
 
 ## 遗留事项
 
-- 前端 Vue 3 + Element Plus 应用仍待开发。
+- 级联删除不完整：评论删除不级联子评论；`UserServiceImpl.deletePost()` 未清理评论与评论点赞；板块删除不级联帖子。
+- 登录逻辑保留明文密码兜底比较，存在安全风险，建议去除。
+- 前端无自动化测试（如 StatisticsPage 的轮询状态机），回归依赖人工验证。
 - Knife4j UI 需要在实际部署启动后人工访问验证。
 - 当前测试未覆盖高并发点赞、批量数据、接口性能和长期运行稳定性。
 - 真实部署环境必须使用环境变量覆盖数据库连接和 JWT 配置，不应依赖仓库中的示例值。
-- 如继续推进课程设计交付，应补充最终验收材料、演示流程、答辩 PPT 或演示视频。
 
 ## 推荐工作流
 

@@ -153,6 +153,7 @@ MySQL 数据库（业务表）
 - Pinia
 - Vue Router
 - WangEditor（富文本编辑器）
+- ECharts（统计可视化图表）
 
 ### 数据库
 
@@ -272,6 +273,24 @@ MySQL数据库   ← 数据库存储
 | 登录/注册 | `login()`, `register()` | `login()`, `register()` |
 
 ## 项目目录结构
+
+仓库顶层布局：
+
+```text
+├── src/                     ← Spring Boot 后端工程（构建产物内嵌前端静态资源）
+├── frontend/                ← Vue 3 前端工程（构建产物复制到 src/main/resources/static）
+├── spark-stats/             ← Spark 离线分析独立工程（跑批 + 大数据生成/导入工具）
+├── 文档/                    ← 需求分析、数据库设计、项目实验报告
+├── 验收材料/                ← 验收交付材料（数据库脚本、CSV 数据、大数据脚本）
+├── SoftwareEngineering.sql  ← 建库建表脚本
+├── demo_data.sql            ← 演示数据脚本
+├── spark_stats.sql          ← 统计表建表脚本
+├── spark_demo_data.sql      ← 统计演示数据脚本
+├── API接口清单.md           ← 前后端联调接口清单
+└── AGENTS.md                ← 开发者/AI Agent 工作手册
+```
+
+后端源码结构：
 
 ```text
 src/main/java/cn/edu/zut/softwareengineering/
@@ -396,7 +415,28 @@ java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 
 启动后访问 API 文档：Knife4j UI `http://localhost:8080/doc.html`
 
-> 详细部署步骤和常见问题见 [后端部署说明.md](./后端部署说明.md)。
+#### 4) 前端开发与构建
+
+前端工程位于 `frontend/`。接口基址通过 `VITE_API_BASE_URL` 环境变量配置（未设置时为同源请求）；本地开发时在 `frontend/.env.local` 中写入后端地址即可（后端已开启 CORS）：
+
+```properties
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+启动开发服务器：
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+生产部署采用前后端一体打包：`npm run build` 生成 `frontend/dist` 后，将构建产物复制到 `src/main/resources/static/` 再重新打包后端，启动后直接访问 `http://localhost:8080/` 即可打开前端页面（SPA 路由由后端兜底转发）。
+
+#### 5) 演示与验收数据
+
+- 小规模演示：导入 `demo_data.sql` 与 `spark_demo_data.sql`。
+- 大规模数据：使用 `spark-stats/datagen.ps1` 生成业务表 CSV，再用 `spark-stats` 工程的 `BulkDataLoader` 通过 Spark 批量导入数据库。
 
 ## 开发状态
 
@@ -410,10 +450,12 @@ java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 | 点赞管理 | 帖子/评论通用点赞、切换、状态、计数 | ✅ 完成 |
 | 后台管理 | 用户/板块/内容管理 + 统计概览 + 热门帖子 | ✅ 完成 |
 | Spark 分析 | 离线跑批写统计表：热门/板块活跃度/用户活跃度/内容质量/每日趋势 | ✅ 完成 |
-| 测试体系 | 65 个自动化测试，覆盖 Service/Controller/鉴权/统计 | ✅ 完成 |
-| 文档收口 | README、数据库设计、API 清单、部署说明、测试报告 | ✅ 完成 |
-| 数据库联调 | 服务器 MySQL（101.35.44.133）真实环境联调通过 | ✅ 完成 |
-| 前端应用 | Vue 3 + Element Plus | ⏳ 待开发 |
+| 大数据工具 | `datagen.ps1` 生成业务表 CSV、`BulkDataLoader` Spark 批量导入 | ✅ 完成 |
+| 测试体系 | 67 个自动化测试，覆盖 Service/Controller/鉴权/统计 | ✅ 完成 |
+| 文档收口 | README、需求分析、数据库设计、实验报告、API 清单 | ✅ 完成 |
+| 数据库联调 | 云服务器 MySQL 真实环境联调通过 | ✅ 完成 |
+| 前端应用 | Vue 3 + Element Plus + ECharts（15 个页面、8 个公共组件） | ✅ 完成 |
+| 一体打包部署 | 前端构建产物内嵌后端静态资源 + SPA 路由兜底 | ✅ 完成 |
 
 ## 演示账号
 
@@ -426,12 +468,14 @@ java -jar target/Software-Engineering-0.0.1-SNAPSHOT.jar
 
 ## 相关文档
 
-- [数据库设计.md](./数据库设计.md) - 数据库 ER 图与完整建表 SQL
+- [文档/需求分析.md](./文档/需求分析.md) - 需求分析与系统设计文档
+- [文档/数据库设计.md](./文档/数据库设计.md) - 数据库 ER 设计与建表说明
+- [文档/项目实验报告.md](./文档/项目实验报告.md) - 课程实验报告（含部署、测试与实现分析）
 - [API接口清单.md](./API接口清单.md) - 当前后端接口清单与联调说明
-- [后端部署说明.md](./后端部署说明.md) - 构建、部署与启动指南
-- [后端测试报告.md](./后端测试报告.md) - 自动化测试结果与质量结论
 - [SoftwareEngineering.sql](./SoftwareEngineering.sql) - 建库建表脚本
 - [demo_data.sql](./demo_data.sql) - 演示数据脚本
+- [验收材料/](./验收材料/) - 验收交付材料（数据库脚本、CSV 数据、大数据脚本）
+- [frontend/](./frontend/) - Vue 3 前端工程
 
 ## License
 

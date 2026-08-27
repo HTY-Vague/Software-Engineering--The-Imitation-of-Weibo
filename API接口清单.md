@@ -1,6 +1,6 @@
 # API 接口清单
 
-> 基于当前后端代码整理，供前端联调、接口测试和验收使用。除 `/auth/**` 和 API 文档地址外，其余接口均需要在请求头携带 `Authorization: Bearer <token>`。
+> 基于当前后端代码整理，供前端联调、接口测试和验收使用。除 `/auth/**`、API 文档地址和部分只读浏览接口（`/forum/boards`、`/forum/board/posts`、`/posts/detail`、`/posts/list`、`/comments/list`、`/likes/count`）外，其余接口均需要在请求头携带 `Authorization: Bearer <token>`。
 
 ## 一、通用响应格式
 
@@ -66,8 +66,8 @@
 
 | 接口 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|------|
-| 板块列表 | POST | `/forum/boards` | USER/ADMIN | 查询全部板块 |
-| 板块帖子 | POST | `/forum/board/posts` | USER/ADMIN | 请求体传 `boardId` |
+| 板块列表 | POST | `/forum/boards` | 公开 | 查询全部板块 |
+| 板块帖子 | POST | `/forum/board/posts` | 公开 | 请求体传 `boardId` |
 
 ### 板块帖子请求示例
 
@@ -82,8 +82,8 @@
 | 接口 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|------|
 | 发布帖子 | POST | `/posts/create` | USER/ADMIN | 作者 ID 使用当前 token 用户 |
-| 帖子详情 | POST | `/posts/detail` | USER/ADMIN | 请求参数：`postId`；浏览量自动递增 |
-| 帖子列表 | POST | `/posts/list` | USER/ADMIN | 支持 `boardId`、`keyword`、`page`、`size` |
+| 帖子详情 | POST | `/posts/detail` | 公开 | 请求参数：`postId`；浏览量自动递增 |
+| 帖子列表 | POST | `/posts/list` | 公开 | 支持 `boardId`、`keyword`、`page`、`size` |
 | 更新帖子 | POST | `/posts/update` | USER/ADMIN | 普通用户只能更新自己的帖子 |
 | 删除帖子 | POST | `/posts/delete` | USER/ADMIN | 普通用户只能删除自己的帖子 |
 
@@ -102,7 +102,7 @@
 | 接口 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|------|
 | 发表评论 | POST | `/comments/create` | USER/ADMIN | 评论用户 ID 使用当前 token 用户 |
-| 评论列表 | POST | `/comments/list` | USER/ADMIN | 请求参数：`postId`；返回两级评论树 |
+| 评论列表 | POST | `/comments/list` | 公开 | 请求参数：`postId`；返回两级评论树 |
 | 删除评论 | POST | `/comments/delete` | USER/ADMIN | 普通用户只能删除自己的评论 |
 
 ### 发表评论请求示例
@@ -123,7 +123,7 @@
 | 点赞 | POST | `/likes/like` | USER/ADMIN | 参数：`targetType`、`targetId` |
 | 取消点赞 | POST | `/likes/unlike` | USER/ADMIN | 参数：`targetType`、`targetId` |
 | 点赞状态 | POST | `/likes/status` | USER/ADMIN | 查询当前用户是否已点赞 |
-| 点赞数 | POST | `/likes/count` | USER/ADMIN | 查询目标对象点赞数 |
+| 点赞数 | POST | `/likes/count` | 公开 | 查询目标对象点赞数 |
 
 `targetType` 约定：
 
@@ -158,7 +158,7 @@
 | 触发 Spark 跑批 | POST | `/admin/statistics/trigger-spark` | 手动异步触发服务器上的 spark-submit 刷新统计表。需配置 `SPARK_ENABLED=true` 及数据库凭据环境变量。返回 `state`（DISABLED/RUNNING）和 `taskId` |
 | Spark 跑批状态 | GET | `/admin/statistics/spark-status` | 查询最近一次跑批状态：`state`（READY/RUNNING/SUCCESS/FAILED）、`taskId`、`startTime`、`endTime`、`durationMillis`、`message` |
 
-> 上述统计接口的数据由服务器上的 Spark 离线分析程序（`/opt/forum-stats.jar`）每日凌晨 03:00 通过 cron 跑批写入 `stat_*` 表，Spring Boot 端只读展示。统计数据容忍日级延迟，不需要实时。课程演示时可通过 `POST /admin/statistics/trigger-spark` 手动触发跑批立即刷新统计数据，再用 `GET /admin/statistics/spark-status` 查询执行状态。详见 `后端文档/后端部署说明.md` 中 Spark 分析部署章节。
+> 上述统计接口的数据由服务器上的 Spark 离线分析程序（`/opt/forum-stats.jar`）每日凌晨 03:00 通过 cron 跑批写入 `stat_*` 表，Spring Boot 端只读展示。统计数据容忍日级延迟，不需要实时。课程演示时可通过 `POST /admin/statistics/trigger-spark` 手动触发跑批立即刷新统计数据，再用 `GET /admin/statistics/spark-status` 查询执行状态。部署细节见 `文档/项目实验报告.md`。
 
 ### 热门帖子响应示例
 

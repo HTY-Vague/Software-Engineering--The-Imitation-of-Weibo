@@ -17,4 +17,7 @@ public class ForumPost {
     private String status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+
+    private String authorUsername;
+    private String authorNickname;
 }

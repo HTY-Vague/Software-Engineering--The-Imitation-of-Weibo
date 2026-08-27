@@ -18,4 +18,9 @@ public class ForumComment {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private List<ForumComment> children;
+
+    private String username;
+    private String nickname;
+    private String replyUsername;
+    private String replyNickname;
 }

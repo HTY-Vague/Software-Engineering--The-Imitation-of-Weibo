@@ -11,22 +11,7 @@ import java.util.Properties;
 
 import static org.apache.spark.sql.functions.*;
 
-/**
- * 论坛离线统计分析程序。
- *
- * 运行方式（服务器）：
- *   /opt/spark/bin/spark-submit \
- *     --class cn.edu.zut.sparkstats.ForumSparkAnalysis \
- *     --master local[2] \
- *     /opt/forum-stats.jar \
- *     jdbc:mysql://127.0.0.1:3306/software_engineering_forum <数据库用户> <数据库密码>
- *
- * 数据流：JDBC 读 MySQL 业务表 → Spark 聚合 → JDBC 覆盖写入 stat_* 统计表。
- * 每日跑批一次，Spring Boot 端只读 stat_* 表展示结果。
- *
- * 注意：本程序只做读多写少的离线聚合，不参与在线事务。
- *       数据库凭据通过命令行参数传入，不硬编码在代码中。
- */
+
 public class ForumSparkAnalysis {
 
     public static void main(String[] args) {

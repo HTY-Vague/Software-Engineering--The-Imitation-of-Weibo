@@ -1,1 +1,0 @@
-import{u as e}from"./index-BgYr_Vc4.js";var t=e(`user`,{state:()=>({profile:null}),actions:{setProfile(e){this.profile=e},clearProfile(){this.profile=null}}});export{t};

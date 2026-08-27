@@ -1,1 +1,0 @@
-import{a as e}from"./index-BgYr_Vc4.js";var t=t=>e.post(`/comments/list`,null,{params:t}),n=t=>e.post(`/comments/create`,t),r=t=>e.post(`/comments/delete`,null,{params:t});export{r as n,t as r,n as t};

@@ -80,6 +80,7 @@ onMounted(loadMeta)
         <h1>{{ post.title }}</h1>
 
         <div class="meta">
+          <span>作者 {{ post.authorNickname || post.authorUsername || `用户 #${post.authorId}` }}</span>
           <span>发布时间 {{ formatDateTime(post.createTime) }}</span>
           <span>{{ post.viewCount || 0 }} 浏览</span>
           <span>{{ post.commentCount || 0 }} 评论</span>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { createComment, deleteComment, listComments } from '../../services/modules/comment'
 import { useAuthStore } from '../../stores/auth'
@@ -67,6 +67,10 @@ const handleSubmit = async () => {
   }
 }
 
+watch(() => props.postId, () => loadComments())
+
+onMounted(loadComments)
+
 const handleDelete = async (commentId) => {
   try {
     await deleteComment({ commentId })
@@ -114,7 +118,12 @@ defineExpose({ loadComments })
     <div v-else-if="!comments.length" class="state">暂无评论，来抢沙发吧</div>
 
     <div v-else class="list">
-      <CommentItem v-for="comment in comments" :key="comment.commentId" :comment="comment" />
+      <CommentItem
+        v-for="comment in comments"
+        :key="comment.commentId"
+        :comment="comment"
+        @replied="loadComments"
+      />
     </div>
   </section>
 </template>

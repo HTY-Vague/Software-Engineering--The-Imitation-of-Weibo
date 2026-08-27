@@ -44,6 +44,10 @@ src\main\resources\application.properties
 ### Temporary run logs ###
 app-run.log
 app-run.err.log
+app-err.log
+
+### Generated data ###
+spark-stats/data/
 
 ### AI Workspace ###
 .workbuddy/
