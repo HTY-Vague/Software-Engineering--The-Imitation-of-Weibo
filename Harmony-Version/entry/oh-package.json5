@@ -1,0 +1,9 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "简坛 HarmonyOS 客户端主模块（单模块即可覆盖全部页面）",
+  "main": "",
+  "author": "",
+  "license": "",
+  "dependencies": {}
+}

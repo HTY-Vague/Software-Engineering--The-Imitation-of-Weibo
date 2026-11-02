@@ -1,0 +1,76 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "简坛论坛客户端"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "简坛论坛主入口"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "简坛"
+    },
+    {
+      "name": "internet_permission_reason",
+      "value": "用于访问论坛后端 REST 接口"
+    },
+    {
+      "name": "app_name",
+      "value": "简坛"
+    },
+    {
+      "name": "brand_title",
+      "value": "简坛论坛"
+    },
+    {
+      "name": "brand_subtitle",
+      "value": "HarmonyOS 客户端"
+    },
+    {
+      "name": "nav_home",
+      "value": "首页"
+    },
+    {
+      "name": "nav_create_post",
+      "value": "发帖"
+    },
+    {
+      "name": "nav_me",
+      "value": "个人中心"
+    },
+    {
+      "name": "nav_my_posts",
+      "value": "我的帖子"
+    },
+    {
+      "name": "nav_my_comments",
+      "value": "我的评论"
+    },
+    {
+      "name": "nav_admin",
+      "value": "管理后台"
+    },
+    {
+      "name": "nav_settings",
+      "value": "服务地址"
+    },
+    {
+      "name": "action_login",
+      "value": "登录"
+    },
+    {
+      "name": "action_register",
+      "value": "注册"
+    },
+    {
+      "name": "action_logout",
+      "value": "退出"
+    },
+    {
+      "name": "search_hint",
+      "value": "搜索帖子标题或内容"
+    }
+  ]
+}

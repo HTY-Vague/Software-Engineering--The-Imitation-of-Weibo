@@ -1,0 +1,32 @@
+{
+  "float": [
+    {
+      "name": "page_padding",
+      "value": "16vp"
+    },
+    {
+      "name": "card_radius",
+      "value": "20vp"
+    },
+    {
+      "name": "panel_radius",
+      "value": "24vp"
+    },
+    {
+      "name": "card_gap",
+      "value": "14vp"
+    },
+    {
+      "name": "text_size_body",
+      "value": "15fp"
+    },
+    {
+      "name": "text_size_meta",
+      "value": "12fp"
+    },
+    {
+      "name": "text_size_title",
+      "value": "19fp"
+    }
+  ]
+}
