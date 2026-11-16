@@ -10,7 +10,7 @@ export struct BoardSidebar {
   @Prop boards: Array<ForumBoard> = [];
   @Prop activeBoardId: number = 0;
   @Prop loading: boolean = false;
-  private onSelect: (boardId: number | undefined) => void = () => {};
+  onSelect: (boardId: number | undefined) => void = () => {};
 
   build() {
     Column() {

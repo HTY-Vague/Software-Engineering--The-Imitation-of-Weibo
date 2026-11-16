@@ -6,20 +6,22 @@
 
 - 应用名称：简坛
 - BundleName：`com.example.jiantan`
-- SDK 基线：HarmonyOS NEXT，API 12（`compatibleSdkVersion: 5.0.0(12)`）
+- SDK 基线：HarmonyOS 26.0.0（API 26，`compatibleSdkVersion: 26.0.0`）
 - 设备类型：phone
 - 交付形态：本地调试签名 HAP，不发行不上架
 
 ## 一、运行方式
 
-1. 安装 DevEco Studio（5.0 及以上）并下载 API 12 SDK。
+1. 安装 DevEco Studio 26.0 及以上，并下载 API 26 SDK。
 2. 用 DevEco Studio 打开本目录（`Harmony-Version/`），等待 `hvigor` 同步完成。
 3. 首次运行使用 IDE 自动生成的调试证书与 Profile：`File > Project Structure > Signing Configs` 勾选自动生成。
 4. 后端准备：启动原项目 Spring Boot 服务（默认 `http://<host>:8080`）。
 5. 配置服务地址：App 内「服务地址」页可填写并保存；也可改 `entry/src/main/ets/store/SettingsStore.ets` 的 `DEFAULT_BASE_URL`。
    - 模拟器访问宿主机用 `http://10.0.2.2:8080`
    - 真机用局域网地址或云服务器公网地址
-6. 运行：`Run > Run 'entry'`，或命令行 `hvigorw assembleHap` 产出 debug HAP 后用 `hdc install` 安装。
+6. 运行：`Run > Run 'entry'`；或先命令行构建，再用 `hdc install` 安装。
+
+> 命令行构建需把 DevEco Studio 的 `tools/hvigor/bin` 加入 PATH，并保证 `java` 可用，否则会分别报 `hvigorw: command not found` 与 `spawn java ENOENT`（内置 JBR 位于 DevEco 安装目录的 `jbr/bin`）。构建命令：`hvigorw assembleHap --mode module -p product=default -p buildMode=debug`。未配置签名时产物为 `entry/build/default/outputs/default/entry-default-unsigned.hap`，可构建但无法安装。
 
 > 后端为明文 HTTP，已在 `entry/src/main/resources/base/profile/network_config.json` 放行明文流量（`cleartextTrafficPermitted: true`），并在 `module.json5` 通过 `metadata` 挂载。仅用于课程演示，正式发布前必须改为 HTTPS 并关闭该配置。
 
@@ -133,8 +135,8 @@ Harmony-Version/
 ## 六、依赖关系与前置事项
 
 - 本工程**只包含客户端**，数据来自后端 REST 接口，后端须先启动并可被设备访问。
-- 原迁移方案中的 **P0（后端与 Web 端 Spark 统计瘦身）尚未执行**。当前后端仍保留 `/admin/statistics/*` 八个端点与 Spark 相关文件；本客户端不调用它们，因此 P0 是否执行不影响本工程运行。
-- 后端执行 P0 后，`/admin/statistics/hot-posts` 将被废弃；本客户端已按方案 3.3 使用 `POST /posts/list`，无需返工。
+- 本客户端不调用 `/admin/statistics/*` 接口，与后端统计链路解耦，统计链路的存在或移除均不影响本工程运行。
+- 管理端帖子列表以 `POST /posts/list` 为数据源，不依赖 `hot-posts` 接口。
 
 ## 七、验收清单
 

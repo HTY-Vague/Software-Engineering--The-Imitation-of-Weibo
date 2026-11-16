@@ -55,7 +55,7 @@ export struct PostEditPage {
                 .value(this.boardOptions.length > 0 ? this.boardOptions[this.boardIndex].value : '请选择板块')
                 .width('100%')
                 .height(44)
-                .fontSize(15)
+                .font({ size: 15 })
                 .margin({ top: 6 })
                 .backgroundColor($r('app.color.surface'))
                 .onSelect((index: number, value: string) => {

@@ -16,7 +16,7 @@ export struct CommentSection {
   @State loading: boolean = false;
   @State submitting: boolean = false;
   @StorageLink('isLogin') isLogin: boolean = false;
-  private onChanged: () => void = () => {};
+  onChanged: () => void = () => {};
 
   aboutToAppear(): void {
     this.loadComments();

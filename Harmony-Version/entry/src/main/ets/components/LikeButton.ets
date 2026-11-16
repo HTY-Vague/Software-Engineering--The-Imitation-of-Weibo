@@ -13,7 +13,7 @@ export struct LikeButton {
   @State liked: boolean = false;
   @State count: number = 0;
   @State loading: boolean = false;
-  private onChanged: () => void = () => {};
+  onChanged: () => void = () => {};
 
   aboutToAppear(): void {
     this.loadState();

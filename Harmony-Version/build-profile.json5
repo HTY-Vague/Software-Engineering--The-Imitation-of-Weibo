@@ -6,9 +6,10 @@
       {
         "name": "default",
         "signingConfig": "default",
-        // 基线：HarmonyOS NEXT API 12
-        "compatibleSdkVersion": "5.0.0(12)",
-        "targetSdkVersion": "5.0.0(12)",
+        // 基线：HarmonyOS 26.0.0（API 26）
+        "compileSdkVersion": "26.0.0",
+        "compatibleSdkVersion": "26.0.0",
+        "targetSdkVersion": "26.0.0",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {

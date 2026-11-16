@@ -1,5 +1,5 @@
 {
-  "modelVersion": "5.0.0",
+  "modelVersion": "6.0.0",
   "name": "jiantan",
   "version": "1.0.0",
   "description": "简坛论坛 HarmonyOS 客户端（复用 Spring Boot 后端 REST API）",

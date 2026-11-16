@@ -16,7 +16,7 @@ export struct CommentItem {
   @State replying: boolean = false;
   @State replyContent: string = '';
   @State submitting: boolean = false;
-  private onReplied: () => void = () => {};
+  onReplied: () => void = () => {};
 
   build() {
     Column() {
