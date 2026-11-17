@@ -129,7 +129,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 
 | 日期 | 变更 |
 |---|---|
-| 2026-11-17 | 修复 Harmony 工程配置与模板不一致项：移除悬空的 `signingConfig: "default"` 引用与 `ohosTest` target，DevEco Studio 26 可直接打开构建（`hvigorw assembleHap` 验证通过，BUILD SUCCESSFUL）；GitCode 同步改为双远端双推（`origin`/`gitcode` 的 `Harmony` 分支 + GitCode `master` 子树） |
+| 2026-11-17 | 修复 Harmony 工程配置与模板不一致项：移除悬空的 `signingConfig: "default"` 引用与 `ohosTest` target，DevEco Studio 26 可直接打开构建（`hvigorw assembleHap` 验证通过，BUILD SUCCESSFUL）；GitCode 交付形态定稿为单一 `master` 分支承载完整项目（覆盖原子树内容并删除远端 `Harmony` 分支，subtree 同步流程废止），今后 Harmony 分支提交双推 `origin/Harmony`（GitHub）与 `gitcode master` |
 | 2026-11-17 | 执行迁移方案 P0：删除后端与 Web 端 Spark 统计链路，概览改实时 COUNT，管理帖子页改用 POST /posts/list，归档移除 spark-stats 独立工程；测试 58 个全绿，前后端构建通过 |
 | 2026-11-16 | HarmonyOS 基线升级至 API 26 并完成首次构建验证；README 拆分为介绍类文档与本文档 |
 | 2026-11-02 | HarmonyOS 客户端工程落地（`Harmony-Version/`），纳入 `Harmony` 分支 |
