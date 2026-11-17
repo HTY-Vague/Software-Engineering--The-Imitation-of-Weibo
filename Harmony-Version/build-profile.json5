@@ -1,11 +1,11 @@
 {
   "app": {
-    // 调试签名由 DevEco Studio 自动生成，此处不预置签名材料
+    // 调试签名不预置：DevEco Studio 打开工程后通过 File > Project Structure > Signing Configs
+    // 勾选 Automatically generate signature 自动生成，签名材料不进入仓库
     "signingConfigs": [],
     "products": [
       {
         "name": "default",
-        "signingConfig": "default",
         // 基线：HarmonyOS 26.0.0（API 26）
         "compileSdkVersion": "26.0.0",
         "compatibleSdkVersion": "26.0.0",

@@ -112,7 +112,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 | 中 | P0 运行时验证：启动应用后核对概览接口返回结构（Knife4j）、Web 端全功能手工回归，依赖上一项部署决策 |
 | 中 | 处理 API 26 下的废弃告警：`AlertDialog.show`（5 处）、`promptAction.showToast`（1 处）改用 UIContext 版本 |
 | 中 | 详情页 `RichText` 在后续 SDK 版本中的替代方案评估 |
-| 低 | 补齐 `ohosTest` 用例目录，或在构建配置中移除未使用的 `ohosTest` target |
+| 低 | 补齐 `ohosTest` 用例目录，或在构建配置中移除未使用的 `ohosTest` target | 已解决：2026-11-17 移除 `entry/build-profile.json5` 的 ohosTest target（工程无测试用例，保留悬空声明无意义） |
 | 低 | 服务地址默认值 `127.0.0.1:8080` 对真机不可达，考虑首次启动强制引导至服务地址页 |
 
 ## 4. 已知风险
@@ -129,6 +129,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-17 | 修复 Harmony 工程配置与模板不一致项：移除悬空的 `signingConfig: "default"` 引用与 `ohosTest` target，DevEco Studio 26 可直接打开构建（`hvigorw assembleHap` 验证通过，BUILD SUCCESSFUL）；GitCode 同步改为双远端双推（`origin`/`gitcode` 的 `Harmony` 分支 + GitCode `master` 子树） |
 | 2026-11-17 | 执行迁移方案 P0：删除后端与 Web 端 Spark 统计链路，概览改实时 COUNT，管理帖子页改用 POST /posts/list，归档移除 spark-stats 独立工程；测试 58 个全绿，前后端构建通过 |
 | 2026-11-16 | HarmonyOS 基线升级至 API 26 并完成首次构建验证；README 拆分为介绍类文档与本文档 |
 | 2026-11-02 | HarmonyOS 客户端工程落地（`Harmony-Version/`），纳入 `Harmony` 分支 |
