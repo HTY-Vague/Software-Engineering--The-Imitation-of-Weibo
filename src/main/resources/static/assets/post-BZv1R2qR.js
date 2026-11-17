@@ -1,1 +1,0 @@
-import{a as e}from"./index-BsrarmcZ.js";var t=t=>e.post(`/posts/create`,t),n=t=>e.post(`/posts/detail`,null,{params:t}),r=t=>e.post(`/posts/list`,null,{params:t}),i=t=>e.post(`/posts/update`,t);export{i,n,r,t};

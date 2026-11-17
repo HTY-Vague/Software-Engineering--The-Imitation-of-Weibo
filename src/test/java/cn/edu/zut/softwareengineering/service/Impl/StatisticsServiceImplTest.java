@@ -1,125 +1,99 @@
 package cn.edu.zut.softwareengineering.service.Impl;
 
-import cn.edu.zut.softwareengineering.entity.StatActiveUser;
-import cn.edu.zut.softwareengineering.entity.StatBoardActive;
-import cn.edu.zut.softwareengineering.entity.StatContentQuality;
-import cn.edu.zut.softwareengineering.entity.StatDailyTrend;
-import cn.edu.zut.softwareengineering.entity.StatHotPost;
-import cn.edu.zut.softwareengineering.entity.StatOverview;
-import cn.edu.zut.softwareengineering.mapper.StatMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumBoardMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumCommentMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumLikeMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumPostMapper;
+import cn.edu.zut.softwareengineering.mapper.UserMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * 统计概览实时 COUNT 聚合测试（P0 移除 Spark 链路后的新测试）。
+ */
 @ExtendWith(MockitoExtension.class)
 class StatisticsServiceImplTest {
 
     @Mock
-    private StatMapper statMapper;
+    private UserMapper userMapper;
 
-    @InjectMocks
+    @Mock
+    private ForumBoardMapper boardMapper;
+
+    @Mock
+    private ForumPostMapper postMapper;
+
+    @Mock
+    private ForumCommentMapper commentMapper;
+
+    @Mock
+    private ForumLikeMapper likeMapper;
+
     private StatisticsServiceImpl statisticsService;
 
-    @Test
-    @DisplayName("统计概览读取 Spark 写入的 stat_overview 快照")
-    void getOverviewSuccess() {
-        StatOverview stat = new StatOverview();
-        stat.setId(1L);
-        stat.setUserCount(10);
-        stat.setActiveUserCount(8);
-        stat.setEnabledBoardCount(3);
-        stat.setPostCount(20);
-        stat.setCommentCount(50);
-        stat.setLikeCount(100);
-        stat.setUpdateTime(LocalDateTime.now());
-        when(statMapper.getOverview()).thenReturn(stat);
-
-        Map<String, Object> overview = statisticsService.getOverview();
-
-        assertEquals(10, overview.get("userCount"));
-        assertEquals(8, overview.get("activeUserCount"));
-        assertEquals(3, overview.get("enabledBoardCount"));
-        assertEquals(20, overview.get("postCount"));
-        assertEquals(50, overview.get("commentCount"));
-        assertEquals(100, overview.get("likeCount"));
+    @BeforeEach
+    void setUp() {
+        statisticsService = new StatisticsServiceImpl(
+                userMapper, boardMapper, postMapper, commentMapper, likeMapper);
     }
 
     @Test
-    @DisplayName("统计概览在快照不存在时返回零值")
-    void getOverviewEmptyFallback() {
-        when(statMapper.getOverview()).thenReturn(null);
+    @DisplayName("统计概览对业务表实时 COUNT 聚合，字段与结构保持不变")
+    void getOverviewAggregatesCountsFromBusinessTables() {
+        when(userMapper.countUsers()).thenReturn(42);
+        when(userMapper.countActiveUsers()).thenReturn(40);
+        when(boardMapper.countEnabledBoards()).thenReturn(6);
+        when(postMapper.countPosts()).thenReturn(100);
+        when(commentMapper.countComments()).thenReturn(500);
+        when(likeMapper.countLikes()).thenReturn(800);
+
+        Map<String, Object> overview = statisticsService.getOverview();
+
+        assertEquals(42, overview.get("userCount"));
+        assertEquals(40, overview.get("activeUserCount"));
+        assertEquals(6, overview.get("enabledBoardCount"));
+        assertEquals(100, overview.get("postCount"));
+        assertEquals(500, overview.get("commentCount"));
+        assertEquals(800, overview.get("likeCount"));
+        assertNotNull(overview.get("updateTime"));
+
+        verify(userMapper).countUsers();
+        verify(userMapper).countActiveUsers();
+        verify(boardMapper).countEnabledBoards();
+        verify(postMapper).countPosts();
+        verify(commentMapper).countComments();
+        verify(likeMapper).countLikes();
+    }
+
+    @Test
+    @DisplayName("COUNT 结果为 null 时各计数字段兜底为 0")
+    void getOverviewHandlesNullCounts() {
+        when(userMapper.countUsers()).thenReturn(null);
+        when(userMapper.countActiveUsers()).thenReturn(null);
+        when(boardMapper.countEnabledBoards()).thenReturn(null);
+        when(postMapper.countPosts()).thenReturn(null);
+        when(commentMapper.countComments()).thenReturn(null);
+        when(likeMapper.countLikes()).thenReturn(null);
 
         Map<String, Object> overview = statisticsService.getOverview();
 
         assertEquals(0, overview.get("userCount"));
+        assertEquals(0, overview.get("activeUserCount"));
+        assertEquals(0, overview.get("enabledBoardCount"));
         assertEquals(0, overview.get("postCount"));
-    }
-
-    @Test
-    @DisplayName("热门帖子默认查询10条")
-    void getHotPostsUsesDefaultLimit() {
-        List<StatHotPost> posts = List.of(new StatHotPost());
-        when(statMapper.getHotPosts(10)).thenReturn(posts);
-
-        List<StatHotPost> result = statisticsService.getHotPosts(null);
-
-        assertEquals(posts, result);
-        verify(statMapper).getHotPosts(10);
-    }
-
-    @Test
-    @DisplayName("热门帖子最多查询50条")
-    void getHotPostsCapsLimit() {
-        statisticsService.getHotPosts(100);
-
-        verify(statMapper).getHotPosts(50);
-    }
-
-    @Test
-    @DisplayName("板块活跃度直接读取统计表")
-    void getBoardActive() {
-        when(statMapper.getBoardActive()).thenReturn(List.of(new StatBoardActive()));
-        assertEquals(1, statisticsService.getBoardActive().size());
-    }
-
-    @Test
-    @DisplayName("用户活跃度排行默认10条，最多50条")
-    void getActiveUsersLimit() {
-        when(statMapper.getActiveUsers(10)).thenReturn(List.of(new StatActiveUser()));
-        statisticsService.getActiveUsers(null);
-        verify(statMapper).getActiveUsers(10);
-
-        statisticsService.getActiveUsers(200);
-        verify(statMapper).getActiveUsers(50);
-    }
-
-    @Test
-    @DisplayName("内容质量分析支持按类型过滤")
-    void getContentQualityByType() {
-        when(statMapper.getContentQuality("HOT")).thenReturn(List.of(new StatContentQuality()));
-        statisticsService.getContentQuality("HOT");
-        verify(statMapper).getContentQuality("HOT");
-    }
-
-    @Test
-    @DisplayName("每日趋势默认7天，最多90天")
-    void getDailyTrendDays() {
-        when(statMapper.getDailyTrend(7)).thenReturn(List.of(new StatDailyTrend()));
-        statisticsService.getDailyTrend(null);
-        verify(statMapper).getDailyTrend(7);
-
-        statisticsService.getDailyTrend(365);
-        verify(statMapper).getDailyTrend(90);
+        assertEquals(0, overview.get("commentCount"));
+        assertEquals(0, overview.get("likeCount"));
+        assertNotNull(overview.get("updateTime"));
     }
 }

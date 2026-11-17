@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deletePost, setPostTop } from '../../services/modules/admin'
-import { getHotPosts } from '../../services/modules/statistics'
+import { listPosts } from '../../services/modules/post'
 import { getBoards } from '../../services/modules/forum'
 import PostCard from '../../components/post/PostCard.vue'
 
@@ -37,7 +37,8 @@ const loadBoards = async () => {
 const loadPosts = async () => {
   loading.value = true
   try {
-    posts.value = normalizeList(await getHotPosts({ limit: 50 }))
+    // 数据源按迁移方案 3.3 由 Spark 热门帖子接口改为业务接口 POST /posts/list
+    posts.value = normalizeList(await listPosts({ page: 1, size: 50 }))
   } catch (error) {
     ElMessage.error(error?.message || '帖子列表加载失败')
     posts.value = []
@@ -95,7 +96,7 @@ onMounted(async () => {
       <div>
         <p class="eyebrow">Admin / Posts</p>
         <h1>内容管理</h1>
-        <p class="sub">查看热门帖子并进行置顶或删除操作。</p>
+        <p class="sub">查看全部帖子并进行置顶或删除操作。</p>
       </div>
       <el-button type="primary" @click="loadPosts">刷新</el-button>
     </section>
@@ -114,7 +115,7 @@ onMounted(async () => {
           <el-button type="danger" plain @click="handleDelete(post)">删除</el-button>
         </div>
       </article>
-      <div class="footer">共 {{ total }} 篇热门帖子</div>
+      <div class="footer">共 {{ total }} 篇帖子</div>
     </section>
   </main>
 </template>

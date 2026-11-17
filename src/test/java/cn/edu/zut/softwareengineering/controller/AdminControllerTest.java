@@ -2,12 +2,10 @@ package cn.edu.zut.softwareengineering.controller;
 
 import cn.edu.zut.softwareengineering.entity.ForumBoard;
 import cn.edu.zut.softwareengineering.entity.ForumPost;
-import cn.edu.zut.softwareengineering.entity.StatHotPost;
 import cn.edu.zut.softwareengineering.entity.User;
 import cn.edu.zut.softwareengineering.service.ForumBoardService;
 import cn.edu.zut.softwareengineering.service.ForumCommentService;
 import cn.edu.zut.softwareengineering.service.ForumPostService;
-import cn.edu.zut.softwareengineering.service.SparkStatsService;
 import cn.edu.zut.softwareengineering.service.StatisticsService;
 import cn.edu.zut.softwareengineering.service.UserService;
 import cn.edu.zut.softwareengineering.utils.JwtUtil;
@@ -61,9 +59,6 @@ class AdminControllerTest {
 
     @MockBean
     private StatisticsService statisticsService;
-
-    @MockBean
-    private SparkStatsService sparkStatsService;
 
     // ---- users ----
 
@@ -224,27 +219,6 @@ class AdminControllerTest {
     }
 
     @Test
-    @DisplayName("管理员获取热门帖子，支持自定义limit")
-    void adminGetHotPosts() throws Exception {
-        StatHotPost post = new StatHotPost();
-        post.setRankNum(1);
-        post.setPostId(10L);
-        post.setTitle("热门");
-        post.setHotScore(99.5);
-        when(statisticsService.getHotPosts(5)).thenReturn(List.of(post));
-
-        mockMvc.perform(get("/admin/statistics/hot-posts")
-                        .header("Authorization", adminToken())
-                        .param("limit", "5"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data[0].postId").value(10))
-                .andExpect(jsonPath("$.data[0].hotScore").value(99.5));
-
-        verify(statisticsService).getHotPosts(5);
-    }
-
-    @Test
     @DisplayName("普通用户访问管理员接口被拒绝")
     void userCannotAccessAdminEndpoint() throws Exception {
         mockMvc.perform(get("/admin/users")
@@ -257,36 +231,6 @@ class AdminControllerTest {
     void unauthenticatedAccessToAdminIsBlocked() throws Exception {
         mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("管理员触发 Spark 跑批返回异步状态")
-    void adminTriggerSparkRun() throws Exception {
-        when(sparkStatsService.triggerRun()).thenReturn(Map.of("state", "RUNNING", "taskId", "spark-1"));
-
-        mockMvc.perform(post("/admin/statistics/trigger-spark")
-                        .header("Authorization", adminToken()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.state").value("RUNNING"))
-                .andExpect(jsonPath("$.data.taskId").value("spark-1"));
-
-        verify(sparkStatsService).triggerRun();
-    }
-
-    @Test
-    @DisplayName("管理员查询 Spark 跑批状态")
-    void adminGetSparkStatus() throws Exception {
-        when(sparkStatsService.getStatus()).thenReturn(Map.of("state", "SUCCESS", "durationMillis", 8000));
-
-        mockMvc.perform(get("/admin/statistics/spark-status")
-                        .header("Authorization", adminToken()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.state").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.durationMillis").value(8000));
-
-        verify(sparkStatsService).getStatus();
     }
 
     private String adminToken() {

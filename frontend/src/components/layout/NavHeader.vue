@@ -44,7 +44,7 @@ const handleLogout = async () => {
         <router-link v-if="isAuthenticated" to="/me">个人中心</router-link>
         <router-link v-if="isAuthenticated" to="/me/posts">我的帖子</router-link>
         <router-link v-if="isAuthenticated" to="/me/comments">我的评论</router-link>
-        <router-link v-if="isAdmin" to="/admin/statistics">管理后台</router-link>
+        <router-link v-if="isAdmin" to="/admin/users">管理后台</router-link>
       </nav>
 
       <div class="actions">

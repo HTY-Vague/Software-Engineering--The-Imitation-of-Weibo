@@ -2,7 +2,7 @@
 
 记录项目各模块与迁移工作的实施状态。项目介绍、功能说明与运行方式见 [README](./README.md)，技术细节见 [文档/技术设计.md](./文档/技术设计.md)。
 
-- 最后更新：2026-11-16
+- 最后更新：2026-11-17
 - 状态口径：`已完成` 表示功能实现且通过验证；`进行中` 表示代码已落地但验证未完成；`未开始` 表示尚未实施；`已废弃` 表示已确认不再推进
 
 ## 1. 总览
@@ -24,7 +24,7 @@
 | 前端应用 | Vue 3 + Element Plus + ECharts（15 个页面、8 个公共组件） | 已完成 |
 | 一体打包部署 | 前端构建产物内嵌后端静态资源 + SPA 路由兜底 | 已完成 |
 | HarmonyOS 客户端 | ArkTS/ArkUI Stage 工程，复用后端 REST API | 进行中（代码完成，待真机验收） |
-| 后端与 Web 端瘦身 | 移除 Spark 统计链路（迁移方案 P0） | 未开始 |
+| 后端与 Web 端瘦身 | 移除 Spark 统计链路（迁移方案 P0） | 已完成（代码与构建验证，运行时回归待部署决策后执行） |
 
 ## 2. HarmonyOS 客户端迁移
 
@@ -34,7 +34,7 @@
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| P0 | 后端与 Web 端移除 Spark 统计链路 | 未开始 |
+| P0 | 后端与 Web 端移除 Spark 统计链路 | 已完成（2026-11-17，代码与构建验证通过） |
 | P1 | 工程骨架、数据模型、网络层、登录会话 | 已完成（API 26 构建通过） |
 | P2 | 核心业务页面与组件 | 已完成（未真机联调） |
 | P3 | 管理端四页、异常兜底、HAP 产出 | 部分完成（HAP 已构建，未签名安装） |
@@ -52,12 +52,36 @@
 
 ### 2.3 未完成
 
-- P0 全部未执行：后端 8 个 `/admin/statistics/*` 端点、`StatisticsService`、`SparkStatsService`、`StatMapper`、6 个统计实体仍保留；`spark-stats/` 与两个统计 SQL 脚本仍在工作区；Web 端 `StatisticsPage.vue`、`statistics.js`、`echarts` 依赖、`NavHeader` 统计入口、`PostsPage.vue` 的 `getHotPosts` 数据源均未调整。
 - 未配置发布签名：当前产物为 `entry-default-unsigned.hap`，无法安装到真机。
 - 真机与模拟器联调未执行，验收清单 9 项无执行记录。
 - 富文本编辑为纯文本降级，复杂排版内容无法在 App 端编辑。
+- P0 运行时验证未执行：概览接口 Knife4j 人工核对、Web 端全功能手工回归（登录→浏览→发帖→评论→点赞→管理）需启动应用与数据库后进行，已随数据/服务部署位置决策一并暂缓（该决策留到最后通过配置文件解决，见待办）。
 
-### 2.4 版本升级记录（2026-11-16）
+### 2.4 P0 后端与 Web 端瘦身实施记录（2026-11-17）
+
+后端：
+
+- 删除 6 个统计实体（`StatOverview` 等）、`StatMapper` 接口与 XML、`SparkStatsService` 接口与实现、旧 `StatisticsServiceImplTest`。
+- `AdminController` 保留 `/admin/statistics/overview`，删除其余 7 个统计端点及 `SparkStatsService` 注入。
+- `StatisticsService` 精简为仅含 `getOverview`；`StatisticsServiceImpl` 注入 5 个业务 Mapper（复用既有 `countUsers` / `countActiveUsers` / `countEnabledBoards` / `countPosts` / `countComments` / `countLikes`），实时 COUNT 聚合，`updateTime` 返回当前时间（语义变更见迁移方案附录 B）。
+- `application.properties` 删除 `spark.*` 配置项；部署相关参数（`DB_URL` / `DB_USERNAME` / `DB_PASSWORD` 等）未改动，留待部署决策时通过配置调整。
+- 新增 `StatisticsServiceImplTest` 2 个用例（实时聚合、null 兜底）。
+- 验证：`mvn clean test` 全绿（58 个测试；原 67 个中删除 11 个 Spark 统计用例、新增 2 个）；`mvn clean package` 成功。
+
+Web 端：
+
+- 删除 `services/modules/statistics.js`、`pages/admin/StatisticsPage.vue`、`/admin/statistics` 路由、`package.json` 的 `echarts` 依赖、`admin.js` 中注释的旧统计代码。
+- `NavHeader.vue` 管理后台链接改指 `/admin/users`。
+- `PostsPage.vue` 数据源由 `getHotPosts({ limit: 50 })` 改为 `listPosts({ page: 1, size: 50 })`（方案 3.3 修复项）；该页原本无板块筛选/搜索 UI，与 Harmony 端 `AdminPostsPage` 的纯列表实现保持一致。
+- `frontend/dist` 重新构建并覆盖 `src/main/resources/static`，内嵌资源已不含统计页面 chunk。
+- 验证：`npm run build` 通过；全量搜索 `statistics` / `echarts` / `getHotPosts` 无残留引用。
+
+独立工程归档：
+
+- `spark-stats/`、`spark_stats.sql`、`spark_demo_data.sql` 已备份至 `%TEMP%\wb-archive-p0-spark-20261117`（19 个文件，含 target 产物与数据 CSV）后从工作区移除；git 历史可随时找回。
+- 验收材料中 Spark 相关交付物保留未动；数据库 `stat_*` 六张表保留不 DROP（方案 3.1 约定）。
+
+### 2.5 版本升级记录（2026-11-16）
 
 SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配置调整如下：
 
@@ -84,7 +108,8 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 | 优先级 | 事项 |
 |---|---|
 | 高 | 配置调试签名，产出可安装 HAP 并在真机跑通验收清单 9 项 |
-| 高 | 决策 P0 是否执行；若执行，需同步调整后端统计链路、Web 端统计页、`spark-stats/` 与 SQL 脚本 |
+| 高 | 数据/服务部署位置决策（本地或云端）——已暂缓，留到迁移收尾阶段通过修改配置文件解决，不做代码层改动 |
+| 中 | P0 运行时验证：启动应用后核对概览接口返回结构（Knife4j）、Web 端全功能手工回归，依赖上一项部署决策 |
 | 中 | 处理 API 26 下的废弃告警：`AlertDialog.show`（5 处）、`promptAction.showToast`（1 处）改用 UIContext 版本 |
 | 中 | 详情页 `RichText` 在后续 SDK 版本中的替代方案评估 |
 | 低 | 补齐 `ohosTest` 用例目录，或在构建配置中移除未使用的 `ohosTest` target |
@@ -96,7 +121,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 |---|---|---|
 | 未签名 HAP | 高 | 无法安装到真机，P3 交付物尚不可用 |
 | 真机联调缺失 | 高 | 网络、权限、明文 HTTP 放行策略均未在设备侧验证 |
-| P0 长期挂起 | 中 | App 不调用统计接口故可运行，但 Web 端仍依赖计划废弃的 `hot-posts` |
+| 部署位置未定 | 中 | 数据/服务运行在本地或云端尚未决策，P0 运行时验证与双端联调被阻塞；决策后仅需改配置，无需代码改动 |
 | 明文 HTTP 放行 | 中 | `network_config.json` 开放 `cleartextTrafficPermitted`，仅适用于课程演示 |
 | 双端并行维护 | 低 | Web 端与 HarmonyOS 端需同步接口变更 |
 
@@ -104,6 +129,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-17 | 执行迁移方案 P0：删除后端与 Web 端 Spark 统计链路，概览改实时 COUNT，管理帖子页改用 POST /posts/list，归档移除 spark-stats 独立工程；测试 58 个全绿，前后端构建通过 |
 | 2026-11-16 | HarmonyOS 基线升级至 API 26 并完成首次构建验证；README 拆分为介绍类文档与本文档 |
 | 2026-11-02 | HarmonyOS 客户端工程落地（`Harmony-Version/`），纳入 `Harmony` 分支 |
 | 2026-10-26 | HarmonyOS 迁移实现方案 v1.0 定稿 |

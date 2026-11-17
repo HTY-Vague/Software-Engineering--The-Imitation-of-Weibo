@@ -1,92 +1,68 @@
 package cn.edu.zut.softwareengineering.service.Impl;
 
-import cn.edu.zut.softwareengineering.entity.StatActiveUser;
-import cn.edu.zut.softwareengineering.entity.StatBoardActive;
-import cn.edu.zut.softwareengineering.entity.StatContentQuality;
-import cn.edu.zut.softwareengineering.entity.StatDailyTrend;
-import cn.edu.zut.softwareengineering.entity.StatHotPost;
-import cn.edu.zut.softwareengineering.entity.StatOverview;
-import cn.edu.zut.softwareengineering.mapper.StatMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumBoardMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumCommentMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumLikeMapper;
+import cn.edu.zut.softwareengineering.mapper.ForumPostMapper;
+import cn.edu.zut.softwareengineering.mapper.UserMapper;
 import cn.edu.zut.softwareengineering.service.StatisticsService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * 统计分析服务实现。
  *
  * 改造说明：
- *   历史版本通过 UserMapper/ForumPostMapper 等多个 Mapper 实时 COUNT 聚合业务表。
- *   当前版本改为读取 Spark 离线跑批写入的 stat_* 统计表，原因：
- *     1. 展示 Spark 大数据分析能力（课程设计要求）。
- *     2. 避免在线请求对业务表做多次全表 COUNT，降低数据库压力。
- *     3. 统计数据容忍日级延迟，不需要实时。
- *
- * 数据来源：StatMapper 读取 stat_overview / stat_hot_post / stat_board_active /
- *           stat_active_user / stat_content_quality / stat_daily_trend 表。
- * 这些表由服务器上 Spark 程序（/opt/forum-stats.jar）每日 03:00 通过 cron 跑批覆盖写入。
+ *   历史版本读取 Spark 离线跑批写入的 stat_* 统计表。移除 Spark 链路后，
+ *   改为注入业务 Mapper 对业务表实时 COUNT 聚合，字段与响应结构保持不变：
+ *     - userCount：用户总数（sys_user 全表）；
+ *     - activeUserCount：正常状态用户数（sys_user.status = 1，原为 Spark
+ *       统计的活跃用户数，口径弱化已在迁移方案附录 B 记录）；
+ *     - enabledBoardCount：启用状态板块数（forum_board.status = 1）；
+ *     - postCount / commentCount：对应业务表有效记录数（status = 1）；
+ *     - likeCount：forum_like 全部点赞记录数；
+ *     - updateTime：当前时间，表示"实时统计"（原为跑批时间）。
+ *   数据量为课程演示规模（千级），COUNT 聚合性能无压力。
  */
 @Service
 public class StatisticsServiceImpl implements StatisticsService {
 
-    private final StatMapper statMapper;
+    private static final DateTimeFormatter TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatisticsServiceImpl(StatMapper statMapper) {
-        this.statMapper = statMapper;
+    private final UserMapper userMapper;
+    private final ForumBoardMapper boardMapper;
+    private final ForumPostMapper postMapper;
+    private final ForumCommentMapper commentMapper;
+    private final ForumLikeMapper likeMapper;
+
+    public StatisticsServiceImpl(UserMapper userMapper,
+                                 ForumBoardMapper boardMapper,
+                                 ForumPostMapper postMapper,
+                                 ForumCommentMapper commentMapper,
+                                 ForumLikeMapper likeMapper) {
+        this.userMapper = userMapper;
+        this.boardMapper = boardMapper;
+        this.postMapper = postMapper;
+        this.commentMapper = commentMapper;
+        this.likeMapper = likeMapper;
     }
 
     @Override
     public Map<String, Object> getOverview() {
-        StatOverview stat = statMapper.getOverview();
         Map<String, Object> overview = new LinkedHashMap<>();
-        if (stat == null) {
-            overview.put("userCount", 0);
-            overview.put("activeUserCount", 0);
-            overview.put("enabledBoardCount", 0);
-            overview.put("postCount", 0);
-            overview.put("commentCount", 0);
-            overview.put("likeCount", 0);
-            overview.put("updateTime", null);
-            return overview;
-        }
-        overview.put("userCount", safe(stat.getUserCount()));
-        overview.put("activeUserCount", safe(stat.getActiveUserCount()));
-        overview.put("enabledBoardCount", safe(stat.getEnabledBoardCount()));
-        overview.put("postCount", safe(stat.getPostCount()));
-        overview.put("commentCount", safe(stat.getCommentCount()));
-        overview.put("likeCount", safe(stat.getLikeCount()));
-        overview.put("updateTime", stat.getUpdateTime());
+        overview.put("userCount", safe(userMapper.countUsers()));
+        overview.put("activeUserCount", safe(userMapper.countActiveUsers()));
+        overview.put("enabledBoardCount", safe(boardMapper.countEnabledBoards()));
+        overview.put("postCount", safe(postMapper.countPosts()));
+        overview.put("commentCount", safe(commentMapper.countComments()));
+        overview.put("likeCount", safe(likeMapper.countLikes()));
+        overview.put("updateTime", LocalDateTime.now().format(TIME_FORMATTER));
         return overview;
-    }
-
-    @Override
-    public List<StatHotPost> getHotPosts(Integer limit) {
-        int queryLimit = limit == null || limit < 1 ? 10 : Math.min(limit, 50);
-        return statMapper.getHotPosts(queryLimit);
-    }
-
-    @Override
-    public List<StatBoardActive> getBoardActive() {
-        return statMapper.getBoardActive();
-    }
-
-    @Override
-    public List<StatActiveUser> getActiveUsers(Integer limit) {
-        int queryLimit = limit == null || limit < 1 ? 10 : Math.min(limit, 50);
-        return statMapper.getActiveUsers(queryLimit);
-    }
-
-    @Override
-    public List<StatContentQuality> getContentQuality(String qualityType) {
-        return statMapper.getContentQuality(qualityType);
-    }
-
-    @Override
-    public List<StatDailyTrend> getDailyTrend(Integer days) {
-        int queryDays = days == null || days < 1 ? 7 : Math.min(days, 90);
-        return statMapper.getDailyTrend(queryDays);
     }
 
     private Integer safe(Integer value) {

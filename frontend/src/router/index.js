@@ -83,12 +83,6 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
-    path: '/admin/statistics',
-    name: 'admin-statistics',
-    component: () => import('../pages/admin/StatisticsPage.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true },
-  },
-  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('../pages/home/HomeNotFound.vue'),
