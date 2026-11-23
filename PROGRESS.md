@@ -15,15 +15,15 @@
 | 帖子管理 | 发布、列表、详情、编辑、删除、置顶、搜索 | 已完成 |
 | 评论管理 | 发表、二级回复、树形展示、删除、计数同步 | 已完成 |
 | 点赞管理 | 帖子/评论通用点赞、切换、状态、计数 | 已完成 |
-| 后台管理 | 用户/板块/内容管理 + 统计概览 + 热门帖子 | 已完成 |
-| Spark 分析 | 离线跑批写统计表：热门/板块活跃度/用户活跃度/内容质量/每日趋势 | 已完成 |
-| 大数据工具 | `datagen.ps1` 生成业务表 CSV、`BulkDataLoader` Spark 批量导入 | 已完成 |
-| 测试体系 | 67 个自动化测试，覆盖 Service/Controller/鉴权/统计 | 已完成 |
+| 后台管理 | 用户/板块/内容管理 + 统计概览（业务表实时 COUNT；热门帖子接口已废弃） | 已完成 |
+| Spark 分析 | 离线跑批写 `stat_*` 表（历史交付；P0 已从工作区移除，验收材料保留） | 已废弃 |
+| 大数据工具 | `datagen.ps1` 生成业务表 CSV、`BulkDataLoader` Spark 批量导入（P0 后仅归档于验收材料） | 已完成（历史交付） |
+| 测试体系 | 58 个常规自动化测试（另有 `DatabaseIntegrationIT` 2 个需显式开启），覆盖 Service/Controller/鉴权/概览 | 已完成 |
 | 文档收口 | README、需求分析、数据库设计、实验报告、API 清单 | 已完成 |
 | 数据库联调 | 云服务器 MySQL 真实环境联调通过 | 已完成 |
-| 前端应用 | Vue 3 + Element Plus + ECharts（15 个页面、8 个公共组件） | 已完成 |
+| 前端应用 | Vue 3 + Element Plus + WangEditor（15 个页面、8 个公共组件；ECharts 随统计页移除） | 已完成 |
 | 一体打包部署 | 前端构建产物内嵌后端静态资源 + SPA 路由兜底 | 已完成 |
-| HarmonyOS 客户端 | ArkTS/ArkUI Stage 工程，复用后端 REST API | 进行中（代码完成，待真机验收） |
+| HarmonyOS 客户端 | ArkTS/ArkUI Stage 工程，复用后端 REST API；P1/P2 完成，P3 部分完成（HAP 已构建未签名） | 进行中（待真机验收） |
 | 后端与 Web 端瘦身 | 移除 Spark 统计链路（迁移方案 P0） | 已完成（代码与构建验证，运行时回归待部署决策后执行） |
 
 ## 2. HarmonyOS 客户端迁移
@@ -34,14 +34,16 @@
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
-| P0 | 后端与 Web 端移除 Spark 统计链路 | 已完成（2026-11-17，代码与构建验证通过） |
+| P0 | 后端与 Web 端移除 Spark 统计链路 | 已完成（2026-11-17，代码与构建验证通过；运行时回归待部署决策） |
 | P1 | 工程骨架、数据模型、网络层、登录会话 | 已完成（API 26 构建通过） |
 | P2 | 核心业务页面与组件 | 已完成（未真机联调） |
-| P3 | 管理端四页、异常兜底、HAP 产出 | 部分完成（HAP 已构建，未签名安装） |
+| P3 | 管理端四页、异常兜底、HAP 产出 | 部分完成（HAP 已构建，未签名安装，真机验收未执行） |
+
+当前节点：代码与构建链路已全部完成（P0/P1/P2 + P3 代码），项目停在 **P3 收尾**；剩余工作全部是验证类，阻塞于两项外部条件——调试签名（需 DevEco Studio GUI 与华为账号自动生成）、数据/服务部署位置决策（用户明确暂缓到收尾，决策后仅需改 `application.properties`）。运行时验证与真机验收均未执行，因此不标记为"已完成"。2026-11-23 已在新路径下完成 clean 全量构建复核（`BUILD SUCCESSFUL`，deprecated 告警清零）。
 
 ### 2.2 已完成
 
-- Stage 工程：单 `entry` 模块，`AppScope` 应用配置，49 个 `.ets` 源文件。
+- Stage 工程：单 `entry` 模块，`AppScope` 应用配置，50 个 `.ets` 源文件。
 - 路由：`Index.ets` 唯一 `@Entry`，`Navigation` + `NavPathStack` 承载 14 个 `NavDestination` 与 `NotFound` 兜底；`AppRouter` 按 `AUTH_REQUIRED` / `ADMIN_REQUIRED` 实现等价路由守卫。
 - 网络层：`HttpClient` 支持 JSON Body、POST + 查询参数、裸标量 Body 三种传参形态；统一解包 `Result`，401/403 清会话并跳转登录。
 - 接口封装：27 条路径，覆盖后端 7 个 Controller 的全部非统计端点，管理端 12 个端点全量封装。
@@ -49,6 +51,7 @@
 - 页面：首页、板块列表、帖子详情、发帖、编辑、个人中心三页、登录、注册、服务地址、404，以及管理端用户/板块/帖子/评论四页。
 - 组件：`NavHeader`、`BoardSidebar`、`PostCard`、`CommentSection`、`CommentItem`、`LikeButton`、`StateViews`。
 - 富文本降级：编辑使用 `TextArea` 纯文本，详情使用 `RichText` 渲染既有 HTML。
+- UIContext 适配：新增 `utils/UIContextHolder.ets` 持有根页面注入的 UIContext，`ToastUtil` 与 5 处删除确认对话框改用 UIContext 版本 API，API 26 下无 deprecated 告警。
 
 ### 2.3 未完成
 
@@ -80,6 +83,7 @@ Web 端：
 
 - `spark-stats/`、`spark_stats.sql`、`spark_demo_data.sql` 已备份至 `%TEMP%\wb-archive-p0-spark-20261117`（19 个文件，含 target 产物与数据 CSV）后从工作区移除；git 历史可随时找回。
 - 验收材料中 Spark 相关交付物保留未动；数据库 `stat_*` 六张表保留不 DROP（方案 3.1 约定）。
+- 遗留说明（2026-11-23 盘点）：`ForumPostMapper.getHotPosts` 方法及其 XML、`DatabaseIntegrationIT` 中的调用仍在，属业务 Mapper 上的历史方法，不属于统计链路；前端与 Harmony 端均已不调用，`/admin/statistics/hot-posts` 端点已删除。
 
 ### 2.5 版本升级记录（2026-11-16）
 
@@ -102,6 +106,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 - 命令：`hvigorw assembleHap --mode module -p product=default -p buildMode=debug`
 - 结果：`BUILD SUCCESSFUL`，耗时约 21 秒，产出 `entry/build/default/outputs/default/entry-default-unsigned.hap`（753 KB）。
 - 包内校验：`compileSdkVersion` 为 `26.0.0.105`，`targetAPIVersion` 与 `minAPIVersion` 均为 `260000026`。
+- 2026-11-23 复核：工程路径去空格后重跑 `hvigorw clean` + `assembleHap`，`BUILD SUCCESSFUL`；deprecated 告警清零，剩余 `app_name` 资源重复声明与未配置签名提示各 1 条（既有状态未动）。产物 `entry-default-unsigned.hap`（772,593 字节）。
 
 ## 3. 待办
 
@@ -114,6 +119,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 | 中 | 详情页 `RichText` 在后续 SDK 版本中的替代方案评估 |
 | 低 | 补齐 `ohosTest` 用例目录，或在构建配置中移除未使用的 `ohosTest` target | 已解决：2026-11-17 移除 `entry/build-profile.json5` 的 ohosTest target（工程无测试用例，保留悬空声明无意义） |
 | 低 | 服务地址默认值 `127.0.0.1:8080` 对真机不可达，考虑首次启动强制引导至服务地址页 |
+| 低 | 清理构建告警：`app_name` 在 `AppScope` 与 `entry` 的 `string.json` 中重复声明（2026-11-23 盘点确认，不影响构建） |
 
 ## 4. 已知风险
 
@@ -124,11 +130,14 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 | 部署位置未定 | 中 | 数据/服务运行在本地或云端尚未决策，P0 运行时验证与双端联调被阻塞；决策后仅需改配置，无需代码改动 |
 | 明文 HTTP 放行 | 中 | `network_config.json` 开放 `cleartextTrafficPermitted`，仅适用于课程演示 |
 | 双端并行维护 | 低 | Web 端与 HarmonyOS 端需同步接口变更 |
+| 接口文档与 README 保留 P0 前描述 | 低 | `API接口清单.md` 仍列 7 个已废弃统计端点及 Spark 跑批说明，`README.md` 仍含 ECharts / Spark 离线分析；按迁移方案 D「原有文档一律不改动」，废弃清单与语义变更记录在方案附录 A/B，属约定内差异而非疏漏 |
 
 ## 5. 变更记录
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-23 | 全量盘点项目真实状态并据此对齐进度文档：总览表按 P0 后状态修正（测试 58 个、热门帖子接口废弃、ECharts/Spark 链路移除、Spark 分析标记已废弃），补「当前节点」结论、P3 状态、遗留 `getHotPosts` 说明、2 条待办与 1 条风险；盘点依据为源码、依赖、构建产物与 Git 实测，未改动受迁移方案 D 保护的 README 与 API 接口清单 |
+| 2026-11-23 | 本轮改动提交 `1c0d16d`（9 文件，+38/-13），按约定双推成功：`origin/Harmony`（GitHub）与 `gitcode Harmony:master`（GitCode 单一 master）均指向 `1c0d16d`；GitCode 首次推送受本机 SSH 权限拦截，经授权重推一次成功；GitHub 事后 `ls-remote` 复核受网络抖动影响未完成，推送有成功输出佐证 |
 | 2026-11-23 | 工程路径去空格完成（`Java Project` → `JavaProject`，用户手动执行），CLI 构建在新路径验证通过，DevEco 打开工程的阻塞解除；处理 API 26 废弃告警 6 处：5 处 `AlertDialog.show` 改 `this.getUIContext().showAlertDialog`，1 处 `promptAction.showToast` 改 `UIContext.getPromptAction().showToast`（新增 `utils/UIContextHolder.ets` 全局持有器，由根页面 `Index` 注入），clean 全量构建 BUILD SUCCESSFUL，deprecated 告警清零（剩余 `app_name` 资源重复声明告警 1 条与未签名提示 1 条，属既有状态未动） |
 | 2026-11-17 | 修复 Harmony 工程配置与模板不一致项：移除悬空的 `signingConfig: "default"` 引用与 `ohosTest` target，DevEco Studio 26 可直接打开构建（`hvigorw assembleHap` 验证通过，BUILD SUCCESSFUL）；GitCode 交付形态定稿为单一 `master` 分支承载完整项目（覆盖原子树内容并删除远端 `Harmony` 分支，subtree 同步流程废止），今后 Harmony 分支提交双推 `origin/Harmony`（GitHub）与 `gitcode master` |
 | 2026-11-17 | 执行迁移方案 P0：删除后端与 Web 端 Spark 统计链路，概览改实时 COUNT，管理帖子页改用 POST /posts/list，归档移除 spark-stats 独立工程；测试 58 个全绿，前后端构建通过 |
