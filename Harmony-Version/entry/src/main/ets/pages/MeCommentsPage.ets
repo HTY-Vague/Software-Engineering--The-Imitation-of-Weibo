@@ -145,7 +145,7 @@ export struct MeCommentsPage {
   }
 
   private confirmDelete(commentId: number): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '删除评论',
       message: '确认删除这条评论吗？删除后无法恢复。',
       primaryButton: {

@@ -184,7 +184,7 @@ export struct AdminPostsPage {
   }
 
   private confirmDelete(post: ForumPost): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '删除帖子',
       message: `确认删除帖子「${safeText(post.title)}」吗？`,
       primaryButton: {

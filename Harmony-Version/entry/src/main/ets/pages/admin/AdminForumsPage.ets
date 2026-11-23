@@ -370,7 +370,7 @@ export struct AdminForumsPage {
   }
 
   private confirmDelete(board: ForumBoard): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '删除板块',
       message: `确认删除板块「${safeText(board.boardName)}」吗？`,
       primaryButton: {

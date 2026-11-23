@@ -2,7 +2,7 @@
 
 记录项目各模块与迁移工作的实施状态。项目介绍、功能说明与运行方式见 [README](./README.md)，技术细节见 [文档/技术设计.md](./文档/技术设计.md)。
 
-- 最后更新：2026-11-17
+- 最后更新：2026-11-23
 - 状态口径：`已完成` 表示功能实现且通过验证；`进行中` 表示代码已落地但验证未完成；`未开始` 表示尚未实施；`已废弃` 表示已确认不再推进
 
 ## 1. 总览
@@ -110,7 +110,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 | 高 | 配置调试签名，产出可安装 HAP 并在真机跑通验收清单 9 项 |
 | 高 | 数据/服务部署位置决策（本地或云端）——已暂缓，留到迁移收尾阶段通过修改配置文件解决，不做代码层改动 |
 | 中 | P0 运行时验证：启动应用后核对概览接口返回结构（Knife4j）、Web 端全功能手工回归，依赖上一项部署决策 |
-| 中 | 处理 API 26 下的废弃告警：`AlertDialog.show`（5 处）、`promptAction.showToast`（1 处）改用 UIContext 版本 |
+| 中 | 处理 API 26 下的废弃告警：`AlertDialog.show`（5 处）、`promptAction.showToast`（1 处）改用 UIContext 版本 | 已解决：2026-11-23 改用 `this.getUIContext().showAlertDialog` 与 `UIContext.getPromptAction().showToast`（新增 `utils/UIContextHolder.ets`，由 `Index` 注入），clean 全量构建通过，deprecated 告警清零 |
 | 中 | 详情页 `RichText` 在后续 SDK 版本中的替代方案评估 |
 | 低 | 补齐 `ohosTest` 用例目录，或在构建配置中移除未使用的 `ohosTest` target | 已解决：2026-11-17 移除 `entry/build-profile.json5` 的 ohosTest target（工程无测试用例，保留悬空声明无意义） |
 | 低 | 服务地址默认值 `127.0.0.1:8080` 对真机不可达，考虑首次启动强制引导至服务地址页 |
@@ -129,6 +129,7 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-23 | 工程路径去空格完成（`Java Project` → `JavaProject`，用户手动执行），CLI 构建在新路径验证通过，DevEco 打开工程的阻塞解除；处理 API 26 废弃告警 6 处：5 处 `AlertDialog.show` 改 `this.getUIContext().showAlertDialog`，1 处 `promptAction.showToast` 改 `UIContext.getPromptAction().showToast`（新增 `utils/UIContextHolder.ets` 全局持有器，由根页面 `Index` 注入），clean 全量构建 BUILD SUCCESSFUL，deprecated 告警清零（剩余 `app_name` 资源重复声明告警 1 条与未签名提示 1 条，属既有状态未动） |
 | 2026-11-17 | 修复 Harmony 工程配置与模板不一致项：移除悬空的 `signingConfig: "default"` 引用与 `ohosTest` target，DevEco Studio 26 可直接打开构建（`hvigorw assembleHap` 验证通过，BUILD SUCCESSFUL）；GitCode 交付形态定稿为单一 `master` 分支承载完整项目（覆盖原子树内容并删除远端 `Harmony` 分支，subtree 同步流程废止），今后 Harmony 分支提交双推 `origin/Harmony`（GitHub）与 `gitcode master` |
 | 2026-11-17 | 执行迁移方案 P0：删除后端与 Web 端 Spark 统计链路，概览改实时 COUNT，管理帖子页改用 POST /posts/list，归档移除 spark-stats 独立工程；测试 58 个全绿，前后端构建通过 |
 | 2026-11-16 | HarmonyOS 基线升级至 API 26 并完成首次构建验证；README 拆分为介绍类文档与本文档 |

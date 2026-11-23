@@ -155,7 +155,7 @@ export struct AdminCommentsPage {
   }
 
   private confirmDelete(comment: ForumComment): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '删除评论',
       message: `确认删除评论 #${safeNumber(comment.commentId)} 吗？`,
       primaryButton: {

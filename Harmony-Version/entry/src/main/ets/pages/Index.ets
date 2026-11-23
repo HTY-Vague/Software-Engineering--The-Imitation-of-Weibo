@@ -19,6 +19,7 @@ import { AdminUsersPage } from './admin/AdminUsersPage';
 import { AdminForumsPage } from './admin/AdminForumsPage';
 import { AdminPostsPage } from './admin/AdminPostsPage';
 import { AdminCommentsPage } from './admin/AdminCommentsPage';
+import { setGlobalUIContext } from '../utils/UIContextHolder';
 
 /**
  * 应用入口页面：唯一 @Entry，承载 Navigation 页面栈。
@@ -31,6 +32,8 @@ struct Index {
   private stack: NavPathStack = AppRouter.getStack();
 
   aboutToAppear(): void {
+    // 注入全局 UIContext，供 ToastUtil 等非组件作用域使用 UIContext 版本 API
+    setGlobalUIContext(this.getUIContext());
     // 双重保险：EntryAbility 已发起，这里再确认一次会话与地址就绪
     AuthStore.hydrate().catch(() => undefined);
     SettingsStore.load().catch(() => undefined);

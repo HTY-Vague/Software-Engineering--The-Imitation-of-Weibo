@@ -125,7 +125,7 @@ export struct MePostsPage {
   }
 
   private confirmDelete(postId: number): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '删除帖子',
       message: '确认删除这篇帖子吗？删除后无法恢复。',
       primaryButton: {

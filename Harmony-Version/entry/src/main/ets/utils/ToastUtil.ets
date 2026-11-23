@@ -1,17 +1,22 @@
-import promptAction from '@ohos.promptAction';
+import { UIContext } from '@ohos.arkui.UIContext';
 import { ApiError } from '../model/ApiError';
+import { getGlobalUIContext } from './UIContextHolder';
 
 /**
  * 轻量提示封装，替代 Web 端的 ElMessage。
+ * 走 UIContext 版本接口（全局 promptAction.showToast 自 API 18 起废弃）。
  */
 export function showToast(message: string): void {
   try {
-    promptAction.showToast({
-      message: message,
-      duration: 2000
-    });
+    const uiContext: UIContext | undefined = getGlobalUIContext();
+    if (uiContext !== undefined) {
+      uiContext.getPromptAction().showToast({
+        message: message,
+        duration: 2000
+      });
+    }
   } catch (error) {
-    // 非 UI 线程或上下文不可用时静默忽略，不阻断业务流程
+    // UI 上下文不可用时静默忽略，不阻断业务流程
   }
 }
 
