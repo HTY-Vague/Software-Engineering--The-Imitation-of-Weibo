@@ -8,7 +8,7 @@ import { RouteParam } from '../router/RouteParam';
 import { NavHeader } from '../components/NavHeader';
 import { LoadingView } from '../components/StateViews';
 import { showToast, resolveErrorMessage } from '../utils/ToastUtil';
-import { plainTextToHtml, safeNumber, safeText, stripHtml } from '../utils/TextUtil';
+import { htmlToPlainText, plainTextToHtml, safeNumber, safeText } from '../utils/TextUtil';
 
 const MAX_TITLE_LENGTH: number = 120;
 
@@ -142,7 +142,9 @@ export struct PostEditPage {
       })
       .then((detail: ForumPost) => {
         this.title = safeText(detail.title);
-        this.content = stripHtml(safeText(detail.content));
+        // 用 htmlToPlainText 保留换行（<br/> 与块级标签转回 \n），
+        // 保存时 plainTextToHtml 再转回 <br/>，避免编辑一次后换行丢失
+        this.content = htmlToPlainText(safeText(detail.content));
         for (let i: number = 0; i < this.boards.length; i++) {
           if (this.boards[i].boardId === safeNumber(detail.boardId)) {
             this.boardIndex = i;
