@@ -1,7 +1,7 @@
 {
   "app": {
-    // 调试签名不预置：DevEco Studio 打开工程后通过 File > Project Structure > Signing Configs
-    // 勾选 Automatically generate signature 自动生成，签名材料不进入仓库
+    // 不做签名：本项目仅在 API 26 模拟器上验证，DevEco 提示模拟器安装 HAP 可跳过签名。
+    // 真机部署需要 profile（依赖设备 UDID），不在本次交付范围内；签名材料不进入仓库
     "signingConfigs": [],
     "products": [
       {

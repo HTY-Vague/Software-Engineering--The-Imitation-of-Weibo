@@ -39,7 +39,7 @@
 | P2 | 核心业务页面与组件 | 已完成（未真机联调） |
 | P3 | 管理端四页、异常兜底、HAP 产出 | 部分完成（HAP 已构建，未签名安装，真机验收未执行） |
 
-当前节点：代码与构建链路已全部完成（P0/P1/P2 + P3 代码），项目停在 **P3 收尾**；剩余工作全部是验证类，阻塞于两项外部条件——调试签名（需 DevEco Studio GUI 与华为账号自动生成）、数据/服务部署位置决策（用户明确暂缓到收尾，决策后仅需改 `application.properties`）。运行时验证与真机验收均未执行，因此不标记为"已完成"。2026-11-23 已在新路径下完成 clean 全量构建复核（`BUILD SUCCESSFUL`，deprecated 告警清零）。
+当前节点：代码与构建链路已全部完成（P0/P1/P2 + P3 代码），项目停在 **P3 收尾**；剩余工作全部是验证类。2026-11-23 依据 DevEco Studio 官方提示明确：仅真机 profile 需要设备 UDID，模拟器安装 HAP 可跳过签名，因此本项目不做任何签名，改用 `entry-default-unsigned.hap` 在 API 26 模拟器上验证；外部阻塞仅剩数据/服务部署位置决策（用户明确暂缓到收尾，决策后仅需改 `application.properties`）。验收清单 2–4 项已于 2026-11-23 在 API 26 模拟器执行通过（登录与杀进程重启保持登录态、板块筛选与关键词搜索、详情正文渲染/点赞/评论/楼中楼），其余项待执行，因此不标记为"已完成"。2026-11-23 已在新路径下完成 clean 全量构建复核（`BUILD SUCCESSFUL`，deprecated 告警清零，构建告警仅剩未签名提示 1 条）。
 
 ### 2.2 已完成
 
@@ -50,13 +50,13 @@
 - 会话与配置：`PreferenceStore` 持久化 token 与用户信息，`SettingsStore` 支持运行时切换后端地址。
 - 页面：首页、板块列表、帖子详情、发帖、编辑、个人中心三页、登录、注册、服务地址、404，以及管理端用户/板块/帖子/评论四页。
 - 组件：`NavHeader`、`BoardSidebar`、`PostCard`、`CommentSection`、`CommentItem`、`LikeButton`、`StateViews`。
-- 富文本降级：编辑使用 `TextArea` 纯文本，详情使用 `RichText` 渲染既有 HTML。
+- 富文本降级：编辑使用 `TextArea` 纯文本；详情正文改用 `Text` + `utils/TextUtil.htmlToPlainText` 渲染（API 26 下 `RichText` 不遵循 viewport 与注入样式，正文被缩至不可读且下方留白，2026-11-23 替换；格式降级为纯文本，段落与换行保留）。
 - UIContext 适配：新增 `utils/UIContextHolder.ets` 持有根页面注入的 UIContext，`ToastUtil` 与 5 处删除确认对话框改用 UIContext 版本 API，API 26 下无 deprecated 告警。
 
 ### 2.3 未完成
 
-- 未配置发布签名：当前产物为 `entry-default-unsigned.hap`，无法安装到真机。
-- 真机与模拟器联调未执行，验收清单 9 项无执行记录。
+- 不做签名：当前产物 `entry-default-unsigned.hap` 可直接安装到模拟器（DevEco 官方提示）；真机安装需 profile 与设备 UDID，本项目不覆盖。
+- 设备侧联调（模拟器）进行中：验收清单 2–4 项已通过（2026-11-23，登录态持久化、板块筛选与搜索、详情正文/点赞/评论/楼中楼），第 5–9 项待执行。
 - 富文本编辑为纯文本降级，复杂排版内容无法在 App 端编辑。
 - P0 运行时验证未执行：概览接口 Knife4j 人工核对、Web 端全功能手工回归（登录→浏览→发帖→评论→点赞→管理）需启动应用与数据库后进行，已随数据/服务部署位置决策一并暂缓（该决策留到最后通过配置文件解决，见待办）。
 
@@ -106,27 +106,27 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 - 命令：`hvigorw assembleHap --mode module -p product=default -p buildMode=debug`
 - 结果：`BUILD SUCCESSFUL`，耗时约 21 秒，产出 `entry/build/default/outputs/default/entry-default-unsigned.hap`（753 KB）。
 - 包内校验：`compileSdkVersion` 为 `26.0.0.105`，`targetAPIVersion` 与 `minAPIVersion` 均为 `260000026`。
-- 2026-11-23 复核：工程路径去空格后重跑 `hvigorw clean` + `assembleHap`，`BUILD SUCCESSFUL`；deprecated 告警清零，剩余 `app_name` 资源重复声明与未配置签名提示各 1 条（既有状态未动）。产物 `entry-default-unsigned.hap`（772,593 字节）。
+- 2026-11-23 复核：工程路径去空格后重跑 `hvigorw clean` + `assembleHap`，`BUILD SUCCESSFUL`；deprecated 告警清零。当次剩余 `app_name` 资源重复声明与未配置签名提示各 1 条；随后删除 entry 侧无引用的 `app_name` 声明，clean 构建告警降至仅「未配置签名」1 条。产物 `entry-default-unsigned.hap`（772,593 字节）。
 
 ## 3. 待办
 
 | 优先级 | 事项 |
 |---|---|
-| 高 | 配置调试签名，产出可安装 HAP 并在真机跑通验收清单 9 项 |
+| 高 | 在 API 26 模拟器执行验收清单剩余项（2–4 项已通过，2026-11-23；5–9 项待执行；不签名，依 DevEco 官方提示模拟器可跳过签名） |
 | 高 | 数据/服务部署位置决策（本地或云端）——已暂缓，留到迁移收尾阶段通过修改配置文件解决，不做代码层改动 |
 | 中 | P0 运行时验证：启动应用后核对概览接口返回结构（Knife4j）、Web 端全功能手工回归，依赖上一项部署决策 |
 | 中 | 处理 API 26 下的废弃告警：`AlertDialog.show`（5 处）、`promptAction.showToast`（1 处）改用 UIContext 版本 | 已解决：2026-11-23 改用 `this.getUIContext().showAlertDialog` 与 `UIContext.getPromptAction().showToast`（新增 `utils/UIContextHolder.ets`，由 `Index` 注入），clean 全量构建通过，deprecated 告警清零 |
-| 中 | 详情页 `RichText` 在后续 SDK 版本中的替代方案评估 |
+| 中 | 详情页 `RichText` 在后续 SDK 版本中的替代方案评估 | 已解决：2026-11-23 实测 API 26 下 `RichText` 渲染异常（按 980px 虚拟宽度缩放、不遵循注入的 viewport 与 CSS、高度不可控），改为 `Text` + `utils/TextUtil.htmlToPlainText`，构建与模拟器运行验证通过 |
 | 低 | 补齐 `ohosTest` 用例目录，或在构建配置中移除未使用的 `ohosTest` target | 已解决：2026-11-17 移除 `entry/build-profile.json5` 的 ohosTest target（工程无测试用例，保留悬空声明无意义） |
 | 低 | 服务地址默认值 `127.0.0.1:8080` 对真机不可达，考虑首次启动强制引导至服务地址页 |
-| 低 | 清理构建告警：`app_name` 在 `AppScope` 与 `entry` 的 `string.json` 中重复声明（2026-11-23 盘点确认，不影响构建） |
+| 低 | 清理构建告警：`app_name` 在 `AppScope` 与 `entry` 的 `string.json` 中重复声明 | 已解决：2026-11-23 删除 entry 侧条目（无引用方，`app_name` 仅由 `AppScope/app.json5` 的 `label` 引用），clean 构建告警由 2 条降至 1 条（仅剩未配置签名提示） |
 
 ## 4. 已知风险
 
 | 风险 | 等级 | 说明 |
 |---|---|---|
-| 未签名 HAP | 高 | 无法安装到真机，P3 交付物尚不可用 |
-| 真机联调缺失 | 高 | 网络、权限、明文 HTTP 放行策略均未在设备侧验证 |
+| 未签名 HAP 仅限模拟器 | 低 | 依 DevEco 官方提示，模拟器可跳过签名安装 unsigned HAP；真机部署需 profile 与设备 UDID，本项目不覆盖，属已知限制 |
+| 设备侧联调部分缺失 | 中 | 模拟器网络、登录态持久化与核心互动链路已验证通过（2026-11-23）；权限边界、明文 HTTP 放行策略及验收第 5–9 项仍未执行 |
 | 部署位置未定 | 中 | 数据/服务运行在本地或云端尚未决策，P0 运行时验证与双端联调被阻塞；决策后仅需改配置，无需代码改动 |
 | 明文 HTTP 放行 | 中 | `network_config.json` 开放 `cleartextTrafficPermitted`，仅适用于课程演示 |
 | 双端并行维护 | 低 | Web 端与 HarmonyOS 端需同步接口变更 |
@@ -136,6 +136,9 @@ SDK 基线由 HarmonyOS NEXT API 12 升级至 API 26（HarmonyOS 26.0.0），配
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-23 | 修复详情正文换行丢失并推进模拟器验收：`htmlToPlainText` 复用 `stripHtml` 时换行被 `\s+` 空白压缩吞掉（正文 `第一行正文\n第二行正文` 渲染成一行），改用控制字符占位保护 `\n`、`<br/>` 与块级闭合标签后再还原；增量构建通过并覆盖安装，布局树确认两行渲染。验收 2–4 项通过：登录 + 杀进程重启保持登录态；公告板筛选 3→2 条；关键词「后端」搜索命中 1 条（后端 SQL 参数核对正确）；点赞 1→已点赞 2→取消 1；发评论与楼中楼回复（`回复 @演示用户`）均正常 |
+| 2026-11-23 | 模拟器运行验证与正文渲染修复：以 unsigned HAP 在 API 26 模拟器（Mate 90 Pro）安装运行成功（依 DevEco 提示模拟器可跳过签名，不做任何签名）；后端改由 JDK 21 启动已打包 jar（8080），并以 `hdc rport` 打通模拟器到宿主网络；帖子详情正文由 `RichText` 改为 `Text` + `utils/TextUtil.htmlToPlainText`（`RichText` 在 API 26 下按 980px 虚拟宽度缩放、不遵循 viewport 与注入样式，正文不可读且下方大片留白），增量构建通过并覆盖安装 |
+| 2026-11-23 | 清理构建告警：删除 `entry/src/main/resources/base/element/string.json` 中重复声明的 `app_name`（与 `AppScope` 重复且无引用方，`app_name` 仅由 `AppScope/app.json5` 的 `label` 引用），clean 全量构建 `BUILD SUCCESSFUL`，告警由 2 条降至 1 条（仅剩未配置签名提示） |
 | 2026-11-23 | 全量盘点项目真实状态并据此对齐进度文档：总览表按 P0 后状态修正（测试 58 个、热门帖子接口废弃、ECharts/Spark 链路移除、Spark 分析标记已废弃），补「当前节点」结论、P3 状态、遗留 `getHotPosts` 说明、2 条待办与 1 条风险；盘点依据为源码、依赖、构建产物与 Git 实测，未改动受迁移方案 D 保护的 README 与 API 接口清单 |
 | 2026-11-23 | 本轮改动提交 `1c0d16d`（9 文件，+38/-13），按约定双推成功：`origin/Harmony`（GitHub）与 `gitcode Harmony:master`（GitCode 单一 master）均指向 `1c0d16d`；GitCode 首次推送受本机 SSH 权限拦截，经授权重推一次成功；GitHub 事后 `ls-remote` 复核受网络抖动影响未完成，推送有成功输出佐证 |
 | 2026-11-23 | 工程路径去空格完成（`Java Project` → `JavaProject`，用户手动执行），CLI 构建在新路径验证通过，DevEco 打开工程的阻塞解除；处理 API 26 废弃告警 6 处：5 处 `AlertDialog.show` 改 `this.getUIContext().showAlertDialog`，1 处 `promptAction.showToast` 改 `UIContext.getPromptAction().showToast`（新增 `utils/UIContextHolder.ets` 全局持有器，由根页面 `Index` 注入），clean 全量构建 BUILD SUCCESSFUL，deprecated 告警清零（剩余 `app_name` 资源重复声明告警 1 条与未签名提示 1 条，属既有状态未动） |

@@ -11,7 +11,7 @@ import { LikeButton } from '../components/LikeButton';
 import { CommentSection } from '../components/CommentSection';
 import { LoadingView } from '../components/StateViews';
 import { formatDateTime } from '../utils/TimeUtil';
-import { safeNumber, safeText } from '../utils/TextUtil';
+import { safeNumber, safeText, htmlToPlainText } from '../utils/TextUtil';
 import { showToast, resolveErrorMessage } from '../utils/ToastUtil';
 
 /**
@@ -135,7 +135,10 @@ export struct PostDetailPage {
                 .width('100%')
                 .margin({ top: 16 })
 
-                RichText(safeText(this.post.content))
+                Text(htmlToPlainText(safeText(this.post.content)))
+                  .fontSize(16)
+                  .lineHeight(26)
+                  .fontColor($r('app.color.text_primary'))
                   .width('100%')
                   .margin({ top: 18 })
               }

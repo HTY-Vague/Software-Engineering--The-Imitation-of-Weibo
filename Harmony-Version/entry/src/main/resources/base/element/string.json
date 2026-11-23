@@ -17,10 +17,6 @@
       "value": "用于访问论坛后端 REST 接口"
     },
     {
-      "name": "app_name",
-      "value": "简坛"
-    },
-    {
       "name": "brand_title",
       "value": "简坛论坛"
     },

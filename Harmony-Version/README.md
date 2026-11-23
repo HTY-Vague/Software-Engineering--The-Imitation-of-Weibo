@@ -106,7 +106,7 @@ Harmony-Version/
 | `comment/CommentSection.vue` | `components/CommentSection.ets` | |
 | `comment/CommentItem.vue` | `components/CommentItem.ets` | 两层评论，children 直接展开 |
 | `like/LikeButton.vue` | `components/LikeButton.ets` | |
-| `editor/RichTextEditor.vue` | 无 | **降级**：编辑用 `TextArea` 纯文本，展示用 `RichText` |
+| `editor/RichTextEditor.vue` | 无 | **降级**：编辑用 `TextArea` 纯文本，展示用 `Text` + HTML 转纯文本 |
 | Element Plus `el-table` | 卡片列表 | 管理端表格改卡片 |
 | `el-dialog` | 页面内内联编辑区 | 板块新增/编辑 |
 | `ElMessageBox.confirm` | `AlertDialog.show` | 删除确认 |
@@ -125,7 +125,7 @@ Harmony-Version/
 
 | 项 | 处理 |
 |---|---|
-| 富文本编辑 | 降级为纯文本输入，提交前把换行转成 `<br/>`；详情页用 `RichText` 渲染既有 HTML |
+| 富文本编辑 | 降级为纯文本输入，提交前把换行转成 `<br/>`；详情页用 `Text` + `htmlToPlainText` 渲染既有 HTML（格式降级，段落与换行保留；API 26 下 `RichText` 无法正常渲染） |
 | 数据统计页 | 不纳入 App 端（方案确认），管理端只有用户/板块/帖子/评论四页 |
 | 管理端帖子数据源 | 用 `POST /posts/list`（方案 3.3），不再用 `/admin/statistics/hot-posts` |
 | 服务地址 | 新增「服务地址」页，运行时切换并持久化 |
